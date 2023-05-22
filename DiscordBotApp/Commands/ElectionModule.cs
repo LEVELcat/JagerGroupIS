@@ -82,7 +82,7 @@ namespace DiscordBotApp.Commands
                 builder.AddField("✔️ Будут", "empty", true);
 
                 List<DiscordMember> claners;
-                GenerateElectionList(ctx, out claners);
+                GenerateElectionList(ctx.Guild, out claners);
 
                 CreateTechnicalChanelAndSetData(ctx, dateTime, claners);
 
@@ -90,6 +90,8 @@ namespace DiscordBotApp.Commands
                 builder.AddField("✖️ Отсуствуют", "empty", true);
                 builder.AddField("🌈 Воздержавшиеся", "empty", true);
 
+                builder.Fields[0].Value = string.Empty;
+                builder.Fields[1].Value = string.Empty;
                 builder.Fields[2].Value = waiterListStr;
                 return builder;
             }
@@ -102,17 +104,17 @@ namespace DiscordBotApp.Commands
 
                 var curentChanel = await ctx.Guild.CreateChannelAsync(dateTime.ToString("f"), ChannelType.Text, discordChannel);
 
-                string message = "yes\n\nno\n\nwait\n" + string.Join(' ', members.Select(x => x.Id));
+                string message = "yes\n\nno\n\nwait\n" + string.Join(' ', members.Select(x => x.Id)) +"\nEnd";
 
                 await DiscordBot.Client.SendMessageAsync(curentChanel, new DiscordMessageBuilder().WithContent(message));
             }
 
-            private void GenerateElectionList(CommandContext ctx, out List<DiscordMember> claners)
+            private void GenerateElectionList(DiscordGuild guild, out List<DiscordMember> claners)
             {
-                var role = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Jäger Group").Value;
-                var notIncludedRole = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Отпуск").Value;
+                var role = guild.Roles.FirstOrDefault(x => x.Value.Name == "Jäger Group").Value;
+                var notIncludedRole = guild.Roles.FirstOrDefault(x => x.Value.Name == "Отпуск").Value;
 
-                var userList = ctx.Guild.GetAllMembersAsync().GetAwaiter().GetResult();
+                var userList = guild.GetAllMembersAsync().GetAwaiter().GetResult();
 
                 claners = (from user in userList
                            where user.Roles.Contains(role) && !user.Roles.Contains(notIncludedRole)
@@ -123,25 +125,127 @@ namespace DiscordBotApp.Commands
             {
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "em_aprove", "✔️"),
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "em_deny", "✖️"),
+                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_update", "Обновить список"),
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_edit", "Редактировать"),
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_delete", "Удалить"),
             };
 
 
-            public async Task Responce(DiscordClient discord, ComponentInteractionCreateEventArgs componentInteraction)
+            public async Task Responce(ComponentInteractionCreateEventArgs componentInteraction)
             {
                 componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
+                var techChannel = componentInteraction.Guild.Channels.Values.First(x => x.IsCategory && x.Name == "💻ботерская💻")
+                    .Children.First(x => x.Name == componentInteraction.Channel.Name);
+
+                var techMessage = await techChannel.GetMessagesAsync(1);
+
+                var content = techMessage.First().Content;
+
+                GenerateElectionList(componentInteraction.Guild, out List<DiscordMember> claners);
+
+                string[] values = content.Split('\n');
+
+                List<ulong> yesList = new List<ulong>(), noList =new List<ulong>(), waitList = new List<ulong>();
+
+                if (values[1] != string.Empty)
+                    yesList = Array.ConvertAll(values[1].Split(' '), x => ulong.Parse(x)).ToList();
+
+                if (values[3] != string.Empty)
+                    noList = Array.ConvertAll(values[3].Split(' '), x => ulong.Parse(x)).ToList();
+
+                if (values[5] != string.Empty)
+                    waitList = Array.ConvertAll(values[5].Split(' '), x => ulong.Parse(x)).ToList();
+
+                List<ulong> removedFromElection = searchRemovedFromElection();
+                List<ulong> addedToElection = searchAddedToElection();
+                List<ulong> searchRemovedFromElection()
+                {
+
+                    return (from id in yesList.Concat(noList).Concat(waitList)
+                            where claners.Select(x => x.Id).Contains(id) == false
+                            select id).ToList();
+                }
+                List<ulong> searchAddedToElection()
+                {
+                    return (from user in claners
+                            where (yesList.Contains(user.Id) || noList.Contains(user.Id) || waitList.Contains(user.Id) == false)
+                            select user.Id).ToList();
+                }
+
+                waitList.AddRange(addedToElection);
+
+                foreach(var removed in removedFromElection)
+                {
+                    RemoveFromLists(removed);
+                }
+
+                void RemoveFromLists(ulong removed)
+                {
+                    yesList.Remove(removed);
+                    noList.Remove(removed);
+                    waitList.Remove(removed);
+                }
+
+                ulong selectedId = componentInteraction.User.Id;
+
+                switch (componentInteraction.Id)
+                {
+                    case "em_aprove":
+                        if (yesList.Contains(selectedId))
+                        {
+                            RemoveFromLists(selectedId);
+                            waitList.Add(selectedId);
+                        }
+                        else
+                        {
+                            RemoveFromLists(componentInteraction.User.Id);
+                            yesList.Add(selectedId);
+                        }
+                        break;
+                    case "em_deny":
+                        if (noList.Contains(selectedId))
+                        {
+                            RemoveFromLists(selectedId);
+                            waitList.Add(selectedId);
+                        }
+                        else
+                        {
+                            RemoveFromLists(componentInteraction.User.Id);
+                            noList.Add(selectedId);
+                        }
+                        break;
+                    case "em_edit":
+                        break;
+                    case "em_delete":
+                        DiscordMember member = componentInteraction.Guild.Members.Values.FirstOrDefault(x => x.Id == selectedId);
+                        if (member.Roles.Contains(componentInteraction.Guild.Roles.Values.First(x => x.Name == "Администратор")))
+                        {
+                            componentInteraction.Channel.DeleteAsync();
+                            techChannel.DeleteAsync();
+                        }
+                        break;
+                    case "em_update":
+                        break;
+                }
+                string message = $"yes\n{string.Join(' ', yesList)}\nno\n{string.Join(' ', noList)}\nwait\n{string.Join(' ', waitList)}\nEnd";
+                techMessage.First().ModifyAsync(message);
 
 
 
+                DiscordEmbed embed = componentInteraction.Message.Embeds[0];
 
+                embed.Fields[0].Value = string.Join('\n', (from user in claners
+                                                                                            where yesList.Contains(user.Id)
+                                                                                            select user.DisplayName));
+                embed.Fields[1].Value = string.Join('\n', (from user in claners
+                                                                                            where noList.Contains(user.Id)
+                                                                                            select user.DisplayName));
+                embed.Fields[2].Value = string.Join('\n', (from user in claners
+                                                                                            where waitList.Contains(user.Id)
+                                                                                            select user.DisplayName));
+                componentInteraction.Message.ModifyAsync(embed);
             }
-
-
-
-
-
         }
     }
 }

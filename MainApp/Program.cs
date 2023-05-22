@@ -1,8 +1,14 @@
 ﻿
+using System.Globalization;
+
 class MainProgram
 {
     private async static Task Main(string[] args)
     {
+        CultureInfo ci = new CultureInfo("ru");
+        Thread.CurrentThread.CurrentCulture = ci;
+        Thread.CurrentThread.CurrentUICulture = ci;
+
         Console.WriteLine("Hello World");
 
         WebApp.Program.Main(args);

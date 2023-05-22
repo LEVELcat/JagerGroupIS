@@ -7,6 +7,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 using System.Reflection;
 using static DiscordBotApp.Commands.ElectionModule;
 
@@ -53,7 +54,6 @@ namespace DiscordApp
 
             Client = discord;
 
-
             await Task.Delay(-1);
         }
 
@@ -64,7 +64,7 @@ namespace DiscordApp
                 if (itteraction.Id.StartsWith("em_"))
                 {
                     if (services.GetService<ElectionSingleton>() is ElectionSingleton election)
-                        election.Responce(ctx, itteraction);
+                        election.Responce(itteraction);
                 }
                 else
                 {
