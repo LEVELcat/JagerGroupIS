@@ -14,18 +14,21 @@ namespace DiscordApp
 {
     public class DiscordBot
     {
+        public static DiscordClient Client { get; private set; }
+
         public static void Main(string[] args) => new DiscordBot().AsyncMain().GetAwaiter().GetResult();
 
         private async Task AsyncMain(params string[] args)
         {
             var discord = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "MTEwODAzNDk1MjEwMjE3MDczNQ.G4p81g.cHr-bOibyap1XRW3I8SfxzNWlIGWJktrIMJyek",
+                Token = "token",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
                 LogTimestampFormat = "MMM dd yyyy - hh:mm:ss tt",
-            });
+                
+            }) ;
 
             IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
             serviceCollection.AddSingleton<ElectionSingleton>();
@@ -44,7 +47,13 @@ namespace DiscordApp
 
             discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);
 
+
+
             await discord.ConnectAsync();
+
+            Client = discord;
+
+
             await Task.Delay(-1);
         }
 
@@ -52,7 +61,7 @@ namespace DiscordApp
         {
             return async (ctx, itteraction) =>
             {
-                if (itteraction.Id.StartsWith("em"))
+                if (itteraction.Id.StartsWith("em_"))
                 {
                     if (services.GetService<ElectionSingleton>() is ElectionSingleton election)
                         election.Responce(ctx, itteraction);
