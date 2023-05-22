@@ -138,100 +138,101 @@ namespace DiscordBotApp.Commands
                 var techChannel = componentInteraction.Guild.Channels.Values.First(x => x.IsCategory && x.Name == "💻ботерская💻")
                     .Children.First(x => x.Name == componentInteraction.Channel.Name);
 
-                var techMessage = await techChannel.GetMessagesAsync(1);
-
-                var content = techMessage.First().Content;
-
                 GenerateElectionList(componentInteraction.Guild, out List<DiscordMember> claners);
 
-                string[] values = content.Split('\n');
+                List<ulong> yesList = new List<ulong>(), noList = new List<ulong>(), waitList = new List<ulong>();
 
-                List<ulong> yesList = new List<ulong>(), noList =new List<ulong>(), waitList = new List<ulong>();
+                var techMessage = await techChannel.GetMessagesAsync(1);
 
-                if (values[1] != string.Empty)
-                    yesList = Array.ConvertAll(values[1].Split(' '), x => ulong.Parse(x)).ToList();
-
-                if (values[3] != string.Empty)
-                    noList = Array.ConvertAll(values[3].Split(' '), x => ulong.Parse(x)).ToList();
-
-                if (values[5] != string.Empty)
-                    waitList = Array.ConvertAll(values[5].Split(' '), x => ulong.Parse(x)).ToList();
-
-                List<ulong> removedFromElection = searchRemovedFromElection();
-                List<ulong> addedToElection = searchAddedToElection();
-                List<ulong> searchRemovedFromElection()
+                lock(this)
                 {
+                    var content = techMessage.First().Content;
 
-                    return (from id in yesList.Concat(noList).Concat(waitList)
-                            where claners.Select(x => x.Id).Contains(id) == false
-                            select id).ToList();
+                    string[] values = content.Split('\n');
+
+                    if (values[1] != string.Empty)
+                        yesList = Array.ConvertAll(values[1].Split(' '), x => ulong.Parse(x)).ToList();
+
+                    if (values[3] != string.Empty)
+                        noList = Array.ConvertAll(values[3].Split(' '), x => ulong.Parse(x)).ToList();
+
+                    if (values[5] != string.Empty)
+                        waitList = Array.ConvertAll(values[5].Split(' '), x => ulong.Parse(x)).ToList();
+
+                    List<ulong> removedFromElection = searchRemovedFromElection();
+                    List<ulong> addedToElection = searchAddedToElection();
+                    List<ulong> searchRemovedFromElection()
+                    {
+
+                        return (from id in yesList.Concat(noList).Concat(waitList)
+                                where claners.Select(x => x.Id).Contains(id) == false
+                                select id).ToList();
+                    }
+                    List<ulong> searchAddedToElection()
+                    {
+                        return (from user in claners
+                                where (yesList.Contains(user.Id) || noList.Contains(user.Id) || waitList.Contains(user.Id)) == false
+                                select user.Id).ToList();
+                    }
+
+                    waitList.AddRange(addedToElection);
+
+                    foreach (var removed in removedFromElection)
+                    {
+                        RemoveFromLists(removed);
+                    }
+
+                    void RemoveFromLists(ulong removed)
+                    {
+                        yesList.Remove(removed);
+                        noList.Remove(removed);
+                        waitList.Remove(removed);
+                    }
+
+                    ulong selectedId = componentInteraction.User.Id;
+
+                    switch (componentInteraction.Id)
+                    {
+                        case "em_aprove":
+                            if (yesList.Contains(selectedId) == false)
+                            {
+                                RemoveFromLists(componentInteraction.User.Id);
+                                yesList.Add(selectedId);
+                            }
+                            else
+                            {
+                                RemoveFromLists(selectedId);
+                                waitList.Add(selectedId);
+                            }
+                            break;
+                        case "em_deny":
+                            if (noList.Contains(selectedId) == false)
+                            {
+                                RemoveFromLists(componentInteraction.User.Id);
+                                noList.Add(selectedId);
+                            }
+                            else
+                            {
+                                RemoveFromLists(selectedId);
+                                waitList.Add(selectedId);
+                            }
+                            break;
+                        case "em_edit":
+                            break;
+                        case "em_delete":
+                            DiscordMember member = componentInteraction.Guild.Members.Values.FirstOrDefault(x => x.Id == selectedId);
+                            if (member.Roles.Contains(componentInteraction.Guild.Roles.Values.First(x => x.Name == "Администратор")))
+                            {
+                                componentInteraction.Channel.DeleteAsync();
+                                techChannel.DeleteAsync();
+                            }
+                            break;
+                        case "em_update":
+                            break;
+                    }
+                    string message = $"yes\n{string.Join(' ', yesList)}\nno\n{string.Join(' ', noList)}\nwait\n{string.Join(' ', waitList)}\nEnd";
+                    var mes = techMessage.First().ModifyAsync(message).GetAwaiter().GetResult();
                 }
-                List<ulong> searchAddedToElection()
-                {
-                    return (from user in claners
-                            where (yesList.Contains(user.Id) || noList.Contains(user.Id) || waitList.Contains(user.Id) == false)
-                            select user.Id).ToList();
-                }
-
-                waitList.AddRange(addedToElection);
-
-                foreach(var removed in removedFromElection)
-                {
-                    RemoveFromLists(removed);
-                }
-
-                void RemoveFromLists(ulong removed)
-                {
-                    yesList.Remove(removed);
-                    noList.Remove(removed);
-                    waitList.Remove(removed);
-                }
-
-                ulong selectedId = componentInteraction.User.Id;
-
-                switch (componentInteraction.Id)
-                {
-                    case "em_aprove":
-                        if (yesList.Contains(selectedId))
-                        {
-                            RemoveFromLists(selectedId);
-                            waitList.Add(selectedId);
-                        }
-                        else
-                        {
-                            RemoveFromLists(componentInteraction.User.Id);
-                            yesList.Add(selectedId);
-                        }
-                        break;
-                    case "em_deny":
-                        if (noList.Contains(selectedId))
-                        {
-                            RemoveFromLists(selectedId);
-                            waitList.Add(selectedId);
-                        }
-                        else
-                        {
-                            RemoveFromLists(componentInteraction.User.Id);
-                            noList.Add(selectedId);
-                        }
-                        break;
-                    case "em_edit":
-                        break;
-                    case "em_delete":
-                        DiscordMember member = componentInteraction.Guild.Members.Values.FirstOrDefault(x => x.Id == selectedId);
-                        if (member.Roles.Contains(componentInteraction.Guild.Roles.Values.First(x => x.Name == "Администратор")))
-                        {
-                            componentInteraction.Channel.DeleteAsync();
-                            techChannel.DeleteAsync();
-                        }
-                        break;
-                    case "em_update":
-                        break;
-                }
-                string message = $"yes\n{string.Join(' ', yesList)}\nno\n{string.Join(' ', noList)}\nwait\n{string.Join(' ', waitList)}\nEnd";
-                techMessage.First().ModifyAsync(message);
-
-
 
                 DiscordEmbed embed = componentInteraction.Message.Embeds[0];
 
