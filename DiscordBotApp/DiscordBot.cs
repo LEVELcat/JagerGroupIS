@@ -27,7 +27,8 @@ namespace DiscordApp
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
-                LogTimestampFormat = "MMM dd yyyy - hh:mm:ss tt",
+                LogTimestampFormat = "MMM dd yyyy - hh:mm:ss tt"
+                
                 
             }) ;
 

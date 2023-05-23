@@ -5,7 +5,7 @@ class MainProgram
 {
     private async static Task Main(string[] args)
     {
-        CultureInfo ci = new CultureInfo("ru");
+        CultureInfo ci = new CultureInfo("ru-RU");
         Thread.CurrentThread.CurrentCulture = ci;
         Thread.CurrentThread.CurrentUICulture = ci;
 
