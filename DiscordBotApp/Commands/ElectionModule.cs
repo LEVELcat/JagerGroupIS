@@ -26,7 +26,7 @@ namespace DiscordBotApp.Commands
         //    await ctx.RespondAsync(new DiscordMessageBuilder().WithContent("отобразись блядь").AddComponents(button));
         //}
 
-        [Command("createButton")]
+        [Command("event")]
         public async Task CreateElectionEvent(CommandContext ctx, params string[] values)
         {
             new ElectionSingleton().CreateMessage(ctx, values);
@@ -55,7 +55,7 @@ namespace DiscordBotApp.Commands
                                where category.IsCategory && category.Name == "📢 Мероприятия 📢"
                                select category).First();
 
-                    channel = await ctx.Guild.CreateChannelAsync(result.ToString("ddd") + " " + result.ToString("f"), ChannelType.Text, channel);
+                    channel = await ctx.Guild.CreateChannelAsync(result.ToString("ddd d MMM yyyy HH-mm"), ChannelType.Text, channel);
                 }
                 else
                 {
@@ -79,19 +79,19 @@ namespace DiscordBotApp.Commands
                 builder.WithTitle(Title);
 
                 string fullDiscript = string.Join('\n', description, 3, description.Length - 3) 
-                    +"\n\nВремя" + Formatter.Timestamp(dateTime, TimestampFormat.LongDateTime) + " " + Formatter.Timestamp(dateTime).ToString();
+                    +"\n\nНачало : " + Formatter.Timestamp(dateTime, TimestampFormat.LongDateTime) + " " + Formatter.Timestamp(dateTime).ToString();
 
                 builder.WithDescription(fullDiscript);
-                builder.AddField("<a:512_3:1109229073831567430>", "empty", true); //Будут
+                builder.AddField("<a:6093_Animated_Checkmark67:1112311399436255315>", "empty", true); //Будут
 
                 List<DiscordMember> claners;
                 GenerateElectionList(ctx.Guild, out claners);
 
                 CreateTechnicalChanelAndSetData(ctx, dateTime, claners);
 
-                string waiterListStr = string.Join('\n',claners.Select(x => x.DisplayName));
-                builder.AddField("<a:512_1:1109228781375340584>", "empty", true); //отсуствуют
-                builder.AddField("<a:512_4:1109229585150779512>", "empty", true); //воздрежавшиеся
+                string waiterListStr = string.Join('\n', claners.Select(x => '\\' + x.DisplayName));
+                builder.AddField("<a:vaxsign:1112311380465422346>", "empty", true); //отсуствуют
+                builder.AddField("<a:load:1112311359548444713>", "empty", true); //воздрежавшиеся
 
                 builder.Fields[0].Value = string.Empty;
                 builder.Fields[1].Value = string.Empty;
@@ -109,7 +109,7 @@ namespace DiscordBotApp.Commands
                                                 where chanel.IsCategory && chanel.Name == "💻ботерская💻"
                                                 select chanel).FirstOrDefault();
 
-                var curentChanel = await ctx.Guild.CreateChannelAsync(dateTime.ToString("ddd") + " " + dateTime.ToString("f"), ChannelType.Text, discordChannel);
+                var curentChanel = await ctx.Guild.CreateChannelAsync(dateTime.ToString("ddd d MMM yyyy HH-mm"), ChannelType.Text, discordChannel);
 
                 string message = "yes\n\nno\n\nwait\n" + string.Join(' ', members.Select(x => x.Id)) +"\nEnd";
 
@@ -130,11 +130,10 @@ namespace DiscordBotApp.Commands
 
             private DiscordComponent[] ReturnButtonComponents => new DiscordComponent[]
             {
-                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "em_aprove", string.Empty, emoji: new DiscordComponentEmoji(1109229073831567430)),
-                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "em_deny", string.Empty, emoji: new DiscordComponentEmoji(1109228781375340584)),
+                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "em_aprove", string.Empty, emoji: new DiscordComponentEmoji(1112311399436255315)),
+                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "em_deny", string.Empty, emoji: new DiscordComponentEmoji(1112311380465422346)),
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_update", "Обновить список"),
-                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_edit", "Редактировать"),
-                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_delete", "🗑️"),
+                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_delete", "🗑️")
             };
 
 
@@ -244,21 +243,36 @@ namespace DiscordBotApp.Commands
 
                 DiscordEmbed embed = componentInteraction.Message.Embeds[0];
 
-                embed.Fields[0].Name = "<a:512_3:1109229073831567430> " + yesList.Count;
+                //Будут
+                embed.Fields[0].Name = "<a:6093_Animated_Checkmark67:1112311399436255315> " + yesList.Count;
                 embed.Fields[0].Value = string.Join('\n', (from user in claners
                                                                                             where yesList.Contains(user.Id)
                                                                                             select user.DisplayName));
 
-                embed.Fields[1].Name = "<a:512_1:1109228781375340584> " + noList.Count;
+                embed.Fields[0].Value = embed.Fields[0].Value.Replace("_", "\\_");
+
+                //Отсуствуют
+                embed.Fields[1].Name = "<a:vaxsign:1112311380465422346> " + noList.Count;
                 embed.Fields[1].Value = string.Join('\n', (from user in claners
                                                                                             where noList.Contains(user.Id)
                                                                                             select user.DisplayName));
 
-                embed.Fields[2].Name = "<a:512_4:1109229585150779512> " + waitList.Count;
+                embed.Fields[1].Value = embed.Fields[1].Value.Replace("_", "\\_");
+
+                //Воздержавшиеся
+                embed.Fields[2].Name = "<a:load:1112311359548444713> " + waitList.Count;
                 embed.Fields[2].Value = string.Join('\n', (from user in claners
                                                                                             where waitList.Contains(user.Id)
-                                                                                            select user.DisplayName));
-                componentInteraction.Message.ModifyAsync(embed);
+                                                                                            select user.DisplayName ));
+                embed.Fields[2].Value = embed.Fields[2].Value.Replace("_", "\\_");
+
+                DiscordMessageBuilder builder = new DiscordMessageBuilder(componentInteraction.Message);
+                builder.Embed = embed;
+                builder.ClearComponents();
+                builder.AddComponents(ReturnButtonComponents);
+
+                //componentInteraction.Message.ModifyAsync(embed);
+                componentInteraction.Message.ModifyAsync(builder);
             }
         }
     }
