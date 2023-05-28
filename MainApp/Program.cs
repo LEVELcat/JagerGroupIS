@@ -14,7 +14,7 @@ class MainProgram
         WebApp.Program.Main(args);
         Console.WriteLine("Web App Start");
 
-        DiscordApp.DiscordBot.Main(args);
+        //DiscordApp.DiscordBot.Main(args);
         Console.WriteLine("Discord Bot Start");
 
 
