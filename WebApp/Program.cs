@@ -7,17 +7,18 @@ namespace WebApp
 
 
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddControllersWithViews();
+
             var app = builder.Build();
 
-            if (!app.Environment.IsDevelopment())
-                app.UseHttpsRedirection();
+            //if (!app.Environment.IsDevelopment())
+            //    app.UseHttpsRedirection();
 
-            //app.UseDefaultFiles();
-            //app.UseStaticFiles();
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
-            app.RunAsync();
-
-            await Task.Delay(-1);
+            await app.RunAsync();
         }
     }
 }
