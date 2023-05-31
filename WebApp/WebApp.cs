@@ -1,13 +1,16 @@
+using WebApp.DbContexts;
+
 namespace WebApp
 {
-    public class Program
+    public class WebApp
     {
+        public static IServiceProvider Services { get; set; }
+
         public static async Task Main(string[] args)
         {
-            
-
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddControllersWithViews();
+            builder.Services.AddTransient<StatisticDbContext>();
 
             var app = builder.Build();
 
@@ -17,6 +20,8 @@ namespace WebApp
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            Services = app.Services;
 
             await app.RunAsync();
         }

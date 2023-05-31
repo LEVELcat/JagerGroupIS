@@ -13,7 +13,7 @@ class MainProgram
 
         Console.WriteLine("Hello World");
 
-        WebApp.Program.Main(args);
+        WebApp.WebApp.Main(args);
         Console.WriteLine("Web App Start");
 
         //DiscordApp.DiscordBot.Main(args);

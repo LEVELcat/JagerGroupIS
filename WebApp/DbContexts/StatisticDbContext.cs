@@ -2,7 +2,7 @@
 
 namespace WebApp.DbContexts
 {
-    public class ApplicationContext : DbContext
+    public class StatisticDbContext : DbContext
     {
         public DbSet<Server> Servers { get; set; }
         public DbSet<Map> Maps { get; set; }
@@ -15,7 +15,7 @@ namespace WebApp.DbContexts
         public DbSet<SteamProfile> SteamProfiles { get; set; }
         public DbSet<Weapon> Weapons { get; set; }
 
-        public ApplicationContext() 
+        public StatisticDbContext() 
         {
             Database.EnsureCreated();
         }
