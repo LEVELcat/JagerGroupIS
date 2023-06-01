@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.RegularExpressions;
 
 namespace WebApp.DbContexts
 {
@@ -14,6 +13,6 @@ namespace WebApp.DbContexts
         [Column("Name")]
         public string MapName { get; set; }
 
-        public ICollection<Match> Matches { get; set; }
+        public ICollection<ServerMatch> Matches { get; set; }
     }
 }

@@ -11,10 +11,10 @@ namespace WebApp.DbContexts
         public ulong ID { get; private set; }
 
         [Column("ServerMatchID")]
-        public uint MatchID { get; private set; }
+        public uint MatchID { get; set; }
 
         [Column("SteamProfileID")]
-        public uint SteamProfileID { get; private set; }
+        public uint SteamProfileID { get; set; }
 
         [Column("CombatPoint")]
         public ushort Combat { get; set; }
