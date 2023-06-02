@@ -63,7 +63,7 @@ namespace WebApp.DbContexts
 
         public ICollection<PersonalDeathByStat> DeathByStats { get; set; }
 
-        public ICollection<PerosnalWeaponKillStat> WeaponKillStats { get; set; }
+        public ICollection<PersonalWeaponKillStat> WeaponKillStats { get; set; }
 
         public ICollection<PersonalDeathByWeaponStat> DeathByWeaponStats { get; set; }
 

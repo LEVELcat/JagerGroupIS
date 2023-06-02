@@ -13,7 +13,7 @@ namespace WebApp.DbContexts
         [Column("Name")]
         public string WeaponName { get; set; }
 
-        public ICollection<PerosnalWeaponKillStat> WeaponKillStats { get; set; }
+        public ICollection<PersonalWeaponKillStat> WeaponKillStats { get; set; }
         public ICollection<PersonalDeathByWeaponStat> DeathByWeaponStats { get; set; }
 
     }

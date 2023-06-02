@@ -6,7 +6,7 @@ namespace WebApp.DbContexts
     {
         public DbSet<Server> Servers { get; set; }
         public DbSet<Map> Maps { get; set; }
-        public DbSet<PerosnalWeaponKillStat> PerosnalWeaponKillStats { get; set; }
+        public DbSet<PersonalWeaponKillStat> PerosnalWeaponKillStats { get; set; }
         public DbSet<PersonalDeathByStat> PersonalDeathByStats { get; set; }
         public DbSet<PersonalDeathByWeaponStat> PersonalDeathByWeaponStats { get; set; }
         public DbSet<PersonalKillStat> PersonalKillStats { get; set; }
@@ -23,7 +23,7 @@ namespace WebApp.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<PerosnalWeaponKillStat>().HasKey(k => new { k.WeaponID, k.PmsID });
+            modelBuilder.Entity<PersonalWeaponKillStat>().HasKey(k => new { k.WeaponID, k.PmsID });
             modelBuilder.Entity<PersonalDeathByWeaponStat>().HasKey(k => new { k.WeaponID, k.PmsID });
             modelBuilder.Entity<PersonalKillStat>().HasKey(k => new { k.SteamProfileID, k.PmsID });
             modelBuilder.Entity<PersonalDeathByStat>().HasKey(k => new { k.SteamProfileID, k.PmsID });

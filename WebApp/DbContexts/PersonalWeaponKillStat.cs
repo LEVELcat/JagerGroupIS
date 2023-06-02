@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace WebApp.DbContexts
 {
     [Table("PersonalWeaponKillStat")]
-    public class PerosnalWeaponKillStat
+    public class PersonalWeaponKillStat
     {
         [Column("PmsID")]
         public ulong PmsID { get; set; }

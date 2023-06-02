@@ -11,7 +11,7 @@ namespace WebApp.DbContexts
         public uint ID { get; private set; }
 
         [Column("SteamID64")]
-        public uint SteamID64 { get; set; }
+        public ulong SteamID64 { get; set; }
 
         [Column("NickName")]
         public string? SteamName { get; set; }
