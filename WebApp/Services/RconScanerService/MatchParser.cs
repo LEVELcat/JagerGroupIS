@@ -61,17 +61,70 @@ namespace WebApp.Services.RconScanerService
                     Match = curentMatch,
 
 
-                    DeathByStats = new List<PersonalDeathByStat>(),
+                    DeathByStats = steamProfile.DeathByStats,
                     DeathByWeaponStats = new List<PersonalDeathByWeaponStat>(),
-                    KillStats = new List<PersonalKillStat>(),
+                    KillStats = steamProfile.KillStats,
                     WeaponKillStats = new List<PersonalWeaponKillStat>(),
-
                 };
 
+                curentMatch.PersonalsMatchStat.Add(personalMatchStat);
 
+                foreach(var killstat in playerStat.GetProperty("most_killed").EnumerateObject())
+                {
+                    personalMatchStat.KillStats.Add(
+                        new PersonalKillStat()
+                        {
+                            Count = killstat.Value.GetUInt16(),
+                            SteamProfile = new SteamProfile
+                            {
+                                SteamID64 = 0,
+                                AvatarHash = string.Empty,
+                                SteamName = killstat.Name
+                            }
+                        });
 
+                }
+
+                foreach (var deathStat in playerStat.GetProperty("death_by").EnumerateObject())
+                {
+                    personalMatchStat.DeathByStats.Add(
+                        new PersonalDeathByStat()
+                        {
+                            Count = deathStat.Value.GetUInt16(),
+                            SteamProfile = new SteamProfile
+                            {
+                                SteamID64 = 0,
+                                AvatarHash = string.Empty,
+                                SteamName = deathStat.Name
+                            }
+                        });
+                }
+                foreach (var weaponKills in playerStat.GetProperty("weapons").EnumerateObject())
+                {
+                    personalMatchStat.WeaponKillStats.Add(
+                        new PersonalWeaponKillStat()
+                        {
+                            Count = weaponKills.Value.GetUInt16(),
+                            Weapon = new Weapon()
+                            {
+                                WeaponName = weaponKills.Name,
+                            }
+                        });
+                }
+
+                foreach (var deathByWeapon in playerStat.GetProperty("death_by_weapons").EnumerateObject())
+                {
+                    personalMatchStat.DeathByWeaponStats.Add(
+                        new PersonalDeathByWeaponStat()
+                        {
+                            Count = deathByWeapon.Value.GetUInt16(),
+                            Weapon = new Weapon()
+                            {
+                                WeaponName = deathByWeapon.Name,
+                            }
+                        });
+                }
             }
-
 
             return curentMatch;
         }
