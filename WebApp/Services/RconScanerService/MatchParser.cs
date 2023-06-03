@@ -32,7 +32,7 @@ namespace WebApp.Services.RconScanerService
 
                 SteamProfile steamProfile = new SteamProfile()
                 {
-                    SteamID64 = steaminfoPtr.GetProperty("steamid").GetUInt64(),
+                    SteamID64 = ulong.Parse(steaminfoPtr.GetProperty("steamid").GetString()),
                     SteamName = steaminfoPtr.GetProperty("personaname").GetString(),
                     AvatarHash = steaminfoPtr.GetProperty("personaname").GetString(),
 

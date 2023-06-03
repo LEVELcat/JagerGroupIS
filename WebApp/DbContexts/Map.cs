@@ -10,9 +10,9 @@ namespace WebApp.DbContexts
         [Column("MapID")]
         public ushort ID { get; private set; }
 
-        [Column("Name")]
+        [Column("MapName")]
         public string MapName { get; set; }
 
-        public ICollection<ServerMatch> Matches { get; set; }
+        public virtual List<ServerMatch>? Matches { get; set; }
     }
 }

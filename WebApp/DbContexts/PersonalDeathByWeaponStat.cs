@@ -15,8 +15,8 @@ namespace WebApp.DbContexts
         [Column("Count")]
         public ushort Count { get; set; }
 
-        public PersonalMatchStat MatchStat { get; set; }
+        public virtual PersonalMatchStat? MatchStat { get; set; }
 
-        public Weapon Weapon { get; set; }
+        public virtual Weapon? Weapon { get; set; }
     }
 }

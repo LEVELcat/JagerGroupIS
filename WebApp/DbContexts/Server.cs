@@ -19,6 +19,6 @@ namespace WebApp.DbContexts
         [Column("ServerIsTracking")]
         public bool ServerIsTracking { get; set; }
 
-        public ICollection<ServerMatch> Matches { get; set; }
+        public virtual List<ServerMatch>? Matches { get; set; }
     }
 }

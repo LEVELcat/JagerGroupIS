@@ -13,8 +13,8 @@ namespace WebApp.DbContexts
         [Column("Name")]
         public string WeaponName { get; set; }
 
-        public ICollection<PersonalWeaponKillStat> WeaponKillStats { get; set; }
-        public ICollection<PersonalDeathByWeaponStat> DeathByWeaponStats { get; set; }
+        public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
+        public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
 
     }
 }

@@ -28,10 +28,10 @@ namespace WebApp.DbContexts
         [Column("CreationTime")]
         public DateTime CreationTime { get; set; }
 
-        public Server Server { get; set; }
+        public virtual Server? Server { get; set; }
 
-        public Map Map { get; set; }
+        public virtual Map? Map { get; set; }
 
-        public ICollection<PersonalMatchStat> PersonalsMatchStat { get; set; }
+        public virtual List<PersonalMatchStat>? PersonalsMatchStat { get; set; }
     }
 }

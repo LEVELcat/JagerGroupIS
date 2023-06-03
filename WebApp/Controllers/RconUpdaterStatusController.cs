@@ -6,11 +6,11 @@ namespace WebApp.Controllers
 {
     public class RconUpdaterStatusController : Controller
     {
-        public IActionResult UpdateStatDb([FromServices] RconUpdaterService service)
+        public string GetInfo([FromServices] StatisticDbContext service)
         {
-
-
-            return null;
+            string result = service.Servers.First().Description;
+            service.Dispose();
+            return result;
         }
     }
 }

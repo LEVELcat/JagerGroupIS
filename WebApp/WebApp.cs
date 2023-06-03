@@ -62,9 +62,16 @@ namespace WebApp
             await ConsoleControlCycle(app);
         }
 
-        static Dictionary<string, string[]> commandDict = new Dictionary<string, string[]>
+        enum Command
         {
-            { "exit", new[] {"exit", "close", "shutdown"} }
+            Exit,
+            UpdateRconDB
+        }
+
+        static Dictionary<Command, string[]> commandDict = new Dictionary<Command, string[]>
+        {
+            { Command.Exit, new[] {"exit", "close", "shutdown"} },
+            { Command.UpdateRconDB, new [] { "update" } }
         };
 
         private static async Task ConsoleControlCycle(WebApplication app)
@@ -76,14 +83,12 @@ namespace WebApp
 
                 switch(commandDict.First(x => x.Value.Contains(cmd)).Key)
                 {
-                    case "exit":
+                    case Command.Exit:
                         await app.StopAsync();
                         goto exitGOTO;
-
-
-
-
-
+                    case Command.UpdateRconDB:
+                        app.Services.GetService<RconUpdaterService>().UpdateStatisticDB();
+                        break;
 
                     default:
                         Console.WriteLine($"Команда {cmd} отсуствует");

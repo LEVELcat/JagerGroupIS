@@ -7,40 +7,45 @@ namespace WebApp.Services.RconScanerService
     {
         public void UpdateStatisticDB()
         {
-            StatisticDbContext context = WebApp.Application.Services.GetService<StatisticDbContext>();
-
-
-            foreach (var server in context.Servers)
+            using(StatisticDbContext context = new StatisticDbContext())
             {
-                if (server != null && server.ServerIsTracking == true)
+                var servers = (from s in context.Servers
+                               select s).ToList();
+
+                foreach (var server in servers)
                 {
-                    RconStatGetter rconStat = new RconStatGetter(server.RconURL);
-
-                    uint? lastLocalMatchId = rconStat.GetLastMatchId;
-                    if (lastLocalMatchId < 0) continue;
-
-                    var outdatedMatch = from m in context.ServerMatches
-                                        where m.ServerLocalMatchId > lastLocalMatchId
-                                        select m;
-                    if (outdatedMatch.Count() > 0)
+                    if (server != null && server.ServerIsTracking == true)
                     {
-                        context.ServerMatches.RemoveRange(outdatedMatch);
-                        context.SaveChanges();
-                    }
+                        RconStatGetter rconStat = new RconStatGetter(server.RconURL);
 
-                    uint LastDbMatchId = (from m in context.ServerMatches
-                                          where m.ServerID == server.ID
-                                          select m.ServerLocalMatchId).Max();
+                        uint? lastServerLocalMatchId = rconStat.GetLastMatchId;
+                        if (lastServerLocalMatchId < 0) continue;
 
-                    foreach(JsonDocument json in rconStat.GetLastMatches(LastDbMatchId - lastLocalMatchId.Value))
-                    {
-                        ServerMatch rawMatchStat = MatchParser.ParseMatchStatistic(json, server);
+                        var outdatedMatch = (from m in server.Matches
+                                            where m.ServerLocalMatchId > lastServerLocalMatchId
+                                            select m).ToList();
 
-                        FixRawStatistic(rawMatchStat, context);
+                        if (outdatedMatch.Count() > 0)
+                        {
+                            context.ServerMatches.RemoveRange(outdatedMatch);
+                            context.SaveChanges();
+                        }
 
-                        context.ServerMatches.Add(rawMatchStat);
+                        uint LastDbMatchId = (from m in server.Matches
+                                              select m.ServerLocalMatchId).Concat(new uint[] { 0 }).Max();
 
-                        context.SaveChanges();
+                        foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
+                        {
+                            ServerMatch rawMatchStat = MatchParser.ParseMatchStatistic(json, server);
+
+                            FixRawStatistic(rawMatchStat, context);
+
+                            context.ServerMatches.Add(rawMatchStat);
+
+                            context.SaveChanges();
+
+                            Console.WriteLine($"MatchID {rawMatchStat.ServerLocalMatchId}/{lastServerLocalMatchId} saved");
+                        }
                     }
                 }
             }
@@ -75,14 +80,20 @@ namespace WebApp.Services.RconScanerService
 
             SteamProfile GetSteamProfile(SteamProfile profile)
             {
-                SteamProfile result = (from s in context.SteamProfiles.Concat(context.SteamProfiles.Local)
+                SteamProfile? result = (from s in context.SteamProfiles
                                        where s.SteamID64 == profile.SteamID64
                                        select s).FirstOrDefault();
-
                 if(result == null)
                 {
-                    context.SteamProfiles.Add(profile);
-                    result = profile;
+                    result = (from s in context.SteamProfiles.Local
+                              where s.SteamID64 == profile.SteamID64
+                              select s).FirstOrDefault();
+
+                    if(result == null)
+                    {
+                        context.SteamProfiles.Add(profile);
+                        result = profile;
+                    }
                 }
 
                 return profile;
@@ -90,36 +101,43 @@ namespace WebApp.Services.RconScanerService
 
             Map GetMap(Map map)
             {
-                Map result = (from m in context.Maps.Concat(context.Maps.Local)
+                Map? result = (from m in context.Maps
                        where m.MapName == map.MapName
                        select m).FirstOrDefault();
-
-                if(map == null)
+                if(result == null)
                 {
-                    context.Maps.Add(map);
-                    result = map;
+                    result = (from m in context.Maps.Local
+                              where m.MapName == map.MapName
+                              select m).FirstOrDefault();
+
+                    if(result == null)
+                    {
+                        context.Maps.Add(map);
+                        result = map;
+                    }
                 }
                 return result;
             }
 
             Weapon GetWeapon(Weapon weapon)
             {
-                Weapon result = (from w in context.Weapons.Concat(context.Weapons.Local)
+                Weapon? result = (from w in context.Weapons
                                  where w.WeaponName == weapon.WeaponName
                                  select w).FirstOrDefault();
 
-                if(weapon == null)
+                if(result == null)
                 {
-                    context.Weapons.Add(weapon);
-                    result = weapon;
+                    result = (from m in context.Weapons.Local
+                              where m.WeaponName == weapon.WeaponName
+                              select m).FirstOrDefault();
+                    if (result == null)
+                    {
+                        context.Weapons.Add(weapon);
+                        result = weapon;
+                    }
                 }
-
                 return weapon;
             }
-
         }
-
-
-
     }
 }

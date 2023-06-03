@@ -19,8 +19,8 @@ namespace WebApp.DbContexts
         [Column("AvatarHash")]
         public string? AvatarHash { get; set; }
 
-        public ICollection<PersonalKillStat> KillStats { get; set; }
-        public ICollection<PersonalDeathByStat> DeathByStats { get; set; }
+        public virtual List<PersonalKillStat>? KillStats { get; set; }
+        public virtual List<PersonalDeathByStat>? DeathByStats { get; set; }
 
     }
 }

@@ -34,6 +34,7 @@ namespace WebApp.DbContexts
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            optionsBuilder.UseLazyLoadingProxies();
 #if DEBUG
             //DEBUG
             optionsBuilder.UseMySql("server=localhost;user=root;password=0451;database=statDB;",

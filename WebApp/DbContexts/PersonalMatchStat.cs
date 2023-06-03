@@ -55,17 +55,17 @@ namespace WebApp.DbContexts
         [Column("PlayTimeSeconds")]
         public ushort PlayTime { get; set; }
 
-        public ServerMatch Match { get; set; }
+        public virtual ServerMatch? Match { get; set; }
 
-        public SteamProfile SteamProfile { get; set; }
+        public virtual SteamProfile? SteamProfile { get; set; }
 
-        public ICollection<PersonalKillStat> KillStats { get; set; }
+        public virtual List<PersonalKillStat>? KillStats { get; set; }
 
-        public ICollection<PersonalDeathByStat> DeathByStats { get; set; }
+        public virtual List<PersonalDeathByStat>? DeathByStats { get; set; }
 
-        public ICollection<PersonalWeaponKillStat> WeaponKillStats { get; set; }
+        public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
 
-        public ICollection<PersonalDeathByWeaponStat> DeathByWeaponStats { get; set; }
+        public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
 
     }
 }
