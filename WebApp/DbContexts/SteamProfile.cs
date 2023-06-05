@@ -8,7 +8,8 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("SteamProfileID")]
-        public uint ID { get; private set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public uint SPID { get; set; }
 
         [Column("SteamID64")]
         public ulong SteamID64 { get; set; }

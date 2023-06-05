@@ -8,7 +8,8 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("PmsID")]
-        public ulong ID { get; private set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public ulong PmsID { get; set; }
 
         [Column("ServerMatchID")]
         public uint MatchID { get; set; }
@@ -17,7 +18,7 @@ namespace WebApp.DbContexts
         public uint SteamProfileID { get; set; }
 
         [Column("CombatPoint")]
-        public ushort Combat { get; set; }
+        public ushort? Combat { get; set; }
 
         [Column("Deaths")]
         public ushort Deaths { get; set; }
@@ -29,7 +30,7 @@ namespace WebApp.DbContexts
         public ushort DeathsWithoutKillStreak { get; set; }
 
         [Column("DefensePoint")]
-        public ushort Defense { get; set; }
+        public ushort? Defense { get; set; }
 
         [Column("Kills")]
         public ushort Kills { get; set; }
@@ -41,13 +42,13 @@ namespace WebApp.DbContexts
         public ushort LongestLife { get; set; }
 
         [Column("OffensePoint")]
-        public ushort Offensive { get; set; }
+        public ushort? Offensive { get; set; }
 
         [Column("ShortestLifeSecond")]
         public ushort ShortestLife { get; set; }
 
         [Column("Support")]
-        public ushort Support { get;set; }
+        public ushort? Support { get;set; }
 
         [Column("TeamKills")]
         public ushort TeamKills { get; set; }

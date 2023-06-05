@@ -42,24 +42,32 @@ namespace WebApp.Services.RconScanerService
 
                 PersonalMatchStat personalMatchStat = new PersonalMatchStat()
                 {
-                    Combat = playerStat.GetProperty("combat").GetUInt16(),
                     Deaths = playerStat.GetProperty("deaths").GetUInt16(),
                     DeathsByTK = playerStat.GetProperty("deaths_by_tk").GetUInt16(),
                     DeathsWithoutKillStreak = playerStat.GetProperty("deaths_without_kill_streak").GetUInt16(),
-                    Defense = playerStat.GetProperty("defense").GetUInt16(),
                     Kills = playerStat.GetProperty("kills").GetUInt16(),
                     KillStreak = playerStat.GetProperty("kills_streak").GetUInt16(),
                     LongestLife = playerStat.GetProperty("longest_life_secs").GetUInt16(),
-                    Offensive = playerStat.GetProperty("offense").GetUInt16(),
                     ShortestLife = playerStat.GetProperty("shortest_life_secs").GetUInt16(),
-                    Support = playerStat.GetProperty("support").GetUInt16(),
                     TeamKills = playerStat.GetProperty("teamkills").GetUInt16(),
                     PlayTime = playerStat.GetProperty("time_seconds").GetUInt16(),
 
+                    //COMPATIBILITY WITH OLD API
+                    Combat = playerStat.GetProperty("combat").ValueKind == JsonValueKind.Null ?
+                            null :
+                            playerStat.GetProperty("combat").GetUInt16(),
+                    Defense = playerStat.GetProperty("defense").ValueKind == JsonValueKind.Null ?
+                            null :
+                            playerStat.GetProperty("defense").GetUInt16(),
+                    Support = playerStat.GetProperty("support").ValueKind == JsonValueKind.Null ?
+                            null :
+                            playerStat.GetProperty("support").GetUInt16(),
+                    Offensive = playerStat.GetProperty("offense").ValueKind == JsonValueKind.Null ?
+                            null :
+                            playerStat.GetProperty("offense").GetUInt16(),
 
                     SteamProfile = steamProfile,
                     Match = curentMatch,
-
 
                     DeathByStats = steamProfile.DeathByStats,
                     DeathByWeaponStats = new List<PersonalDeathByWeaponStat>(),
@@ -112,17 +120,21 @@ namespace WebApp.Services.RconScanerService
                         });
                 }
 
-                foreach (var deathByWeapon in playerStat.GetProperty("death_by_weapons").EnumerateObject())
+                //COMPATIBILITY WITH OLD API
+                if (playerStat.GetProperty("death_by_weapons").ValueKind != JsonValueKind.Null)
                 {
-                    personalMatchStat.DeathByWeaponStats.Add(
-                        new PersonalDeathByWeaponStat()
-                        {
-                            Count = deathByWeapon.Value.GetUInt16(),
-                            Weapon = new Weapon()
+                    foreach (var deathByWeapon in playerStat.GetProperty("death_by_weapons").EnumerateObject())
+                    {
+                        personalMatchStat.DeathByWeaponStats.Add(
+                            new PersonalDeathByWeaponStat()
                             {
-                                WeaponName = deathByWeapon.Name,
-                            }
-                        });
+                                Count = deathByWeapon.Value.GetUInt16(),
+                                Weapon = new Weapon()
+                                {
+                                    WeaponName = deathByWeapon.Name,
+                                }
+                            });
+                    }
                 }
             }
 

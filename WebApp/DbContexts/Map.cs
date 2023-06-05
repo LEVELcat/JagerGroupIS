@@ -8,7 +8,8 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("MapID")]
-        public ushort ID { get; private set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public ushort MID { get; set; }
 
         [Column("MapName")]
         public string MapName { get; set; }

@@ -8,7 +8,8 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("WeaponID")]
-        public ushort ID { get; private set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public ushort WID { get; set; }
 
         [Column("Name")]
         public string WeaponName { get; set; }

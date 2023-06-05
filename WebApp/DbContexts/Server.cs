@@ -8,7 +8,8 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("ServerID")]
-        public uint ID { get; private set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public uint SID { get; set; }
 
         [Column("ServerAdress")]
         public string RconURL { get; set; }
