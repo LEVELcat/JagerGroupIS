@@ -8,8 +8,7 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("SteamProfileID")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public uint SPID { get; set; }
+        public uint ID { get; set; }
 
         [Column("SteamID64")]
         public ulong SteamID64 { get; set; }
@@ -23,5 +22,6 @@ namespace WebApp.DbContexts
         public virtual List<PersonalKillStat>? KillStats { get; set; }
         public virtual List<PersonalDeathByStat>? DeathByStats { get; set; }
 
+        public virtual List<PersonalMatchStat>? MatchStats { get; set; }
     }
 }

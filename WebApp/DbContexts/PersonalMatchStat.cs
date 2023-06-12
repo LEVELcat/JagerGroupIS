@@ -8,8 +8,7 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("PmsID")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public ulong PmsID { get; set; }
+        public ulong ID { get; set; }
 
         [Column("ServerMatchID")]
         public uint MatchID { get; set; }
@@ -53,8 +52,9 @@ namespace WebApp.DbContexts
         [Column("TeamKills")]
         public ushort TeamKills { get; set; }
 
+        //IN API IT CAN HAVE <0 VALUE LMAO
         [Column("PlayTimeSeconds")]
-        public ushort PlayTime { get; set; }
+        public short PlayTime { get; set; }
 
         public virtual ServerMatch? Match { get; set; }
 

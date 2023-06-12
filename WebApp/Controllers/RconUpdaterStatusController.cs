@@ -8,6 +8,8 @@ namespace WebApp.Controllers
     {
         public string GetInfo([FromServices] StatisticDbContext service)
         {
+            service = WebApp.Application.Services.GetService<StatisticDbContext>();
+
             string result = service.Servers.First().Description;
             service.Dispose();
             return result;

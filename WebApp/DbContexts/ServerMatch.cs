@@ -8,8 +8,7 @@ namespace WebApp.DbContexts
     {
         [Key]
         [Column("ServerMatchID")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public uint SMID { get; set; }
+        public uint ID { get; set; }
 
         [Column("ServerID")]
         public uint ServerID { get; set; }

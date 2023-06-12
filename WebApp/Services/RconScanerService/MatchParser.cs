@@ -3,15 +3,15 @@ using WebApp.DbContexts;
 
 namespace WebApp.Services.RconScanerService
 {
-    public static class MatchParser
+    static class MatchParser
     {
-        public static ServerMatch ParseMatchStatistic(JsonDocument json, Server server)
+        public static ServerMatch ParseMatchStatisticAndAddToContext(JsonDocument json, Server server, StatisticDbContext context)
         {
             if (json == null) return null;
 
             var resultPtr = json.RootElement.GetProperty("result");
 
-            Map curentMap = new Map() { MapName = resultPtr.GetProperty("map_name").GetString() };
+            Map curentMap = GetMap(resultPtr.GetProperty("map_name").GetString());
 
             ServerMatch curentMatch = new ServerMatch()
             {
@@ -26,7 +26,16 @@ namespace WebApp.Services.RconScanerService
                 PersonalsMatchStat = new List<PersonalMatchStat>()
             };
 
-            foreach(var playerStat in resultPtr.GetProperty("player_stats").EnumerateArray())
+            context.ServerMatches.Add(curentMatch);
+
+            Dictionary<string, SteamProfile> localSteamProfile = new Dictionary<string, SteamProfile>();
+
+            List<PersonalDeathByStat> personalDeathByStatsList = new List<PersonalDeathByStat>();
+            List<PersonalDeathByWeaponStat> personalDeathByWeaponStatsList = new List<PersonalDeathByWeaponStat>();
+            List<PersonalKillStat> personalKillStatsList = new List<PersonalKillStat>();
+            List<PersonalWeaponKillStat> personalWeaponKillStatsList = new List<PersonalWeaponKillStat>();
+
+            foreach (var playerStat in resultPtr.GetProperty("player_stats").EnumerateArray())
             {
                 var steaminfoPtr = playerStat.GetProperty("steaminfo").GetProperty("profile");
 
@@ -34,11 +43,17 @@ namespace WebApp.Services.RconScanerService
                 {
                     SteamID64 = ulong.Parse(steaminfoPtr.GetProperty("steamid").GetString()),
                     SteamName = steaminfoPtr.GetProperty("personaname").GetString(),
-                    AvatarHash = steaminfoPtr.GetProperty("personaname").GetString(),
+                    AvatarHash = steaminfoPtr.GetProperty("avatarhash").GetString(),
 
                     DeathByStats = new List<PersonalDeathByStat>(),
                     KillStats = new List<PersonalKillStat>()
                 };
+                string localNick = steamProfile.SteamName;
+
+                steamProfile = GetSteamProfile(steamProfile);
+                localSteamProfile.Add(playerStat.GetProperty("player").GetString(), steamProfile);
+
+                Console.WriteLine(localNick);
 
                 PersonalMatchStat personalMatchStat = new PersonalMatchStat()
                 {
@@ -50,7 +65,7 @@ namespace WebApp.Services.RconScanerService
                     LongestLife = playerStat.GetProperty("longest_life_secs").GetUInt16(),
                     ShortestLife = playerStat.GetProperty("shortest_life_secs").GetUInt16(),
                     TeamKills = playerStat.GetProperty("teamkills").GetUInt16(),
-                    PlayTime = playerStat.GetProperty("time_seconds").GetUInt16(),
+                    PlayTime = playerStat.GetProperty("time_seconds").GetInt16(),
 
                     //COMPATIBILITY WITH OLD API
                     Combat = playerStat.GetProperty("combat").ValueKind == JsonValueKind.Null ?
@@ -74,49 +89,44 @@ namespace WebApp.Services.RconScanerService
                     KillStats = steamProfile.KillStats,
                     WeaponKillStats = new List<PersonalWeaponKillStat>(),
                 };
-
                 curentMatch.PersonalsMatchStat.Add(personalMatchStat);
 
-                foreach(var killstat in playerStat.GetProperty("most_killed").EnumerateObject())
+                context.SteamProfiles.Add(steamProfile);
+                context.PersonalMatchStats.Add(personalMatchStat);
+
+                foreach (var killstat in playerStat.GetProperty("most_killed").EnumerateObject())
                 {
-                    personalMatchStat.KillStats.Add(
-                        new PersonalKillStat()
+                    if (localSteamProfile.ContainsKey(killstat.Name))
+                    {
+                        personalKillStatsList.Add(
+                            new PersonalKillStat()
                         {
                             Count = killstat.Value.GetUInt16(),
-                            SteamProfile = new SteamProfile
-                            {
-                                SteamID64 = 0,
-                                AvatarHash = string.Empty,
-                                SteamName = killstat.Name
-                            }
+                            SteamProfile = localSteamProfile[killstat.Name]
                         });
-
+                    }
                 }
 
                 foreach (var deathStat in playerStat.GetProperty("death_by").EnumerateObject())
                 {
-                    personalMatchStat.DeathByStats.Add(
-                        new PersonalDeathByStat()
+                    if (localSteamProfile.ContainsKey(deathStat.Name))
+                    {
+                        personalDeathByStatsList.Add(
+                            new PersonalDeathByStat()
                         {
                             Count = deathStat.Value.GetUInt16(),
-                            SteamProfile = new SteamProfile
-                            {
-                                SteamID64 = 0,
-                                AvatarHash = string.Empty,
-                                SteamName = deathStat.Name
-                            }
+                            SteamProfile = localSteamProfile[deathStat.Name]
                         });
+                    }
+
                 }
                 foreach (var weaponKills in playerStat.GetProperty("weapons").EnumerateObject())
                 {
-                    personalMatchStat.WeaponKillStats.Add(
+                    personalWeaponKillStatsList.Add(
                         new PersonalWeaponKillStat()
                         {
                             Count = weaponKills.Value.GetUInt16(),
-                            Weapon = new Weapon()
-                            {
-                                WeaponName = weaponKills.Name,
-                            }
+                            Weapon = GetWeapon(weaponKills.Name)
                         });
                 }
 
@@ -125,20 +135,108 @@ namespace WebApp.Services.RconScanerService
                 {
                     foreach (var deathByWeapon in playerStat.GetProperty("death_by_weapons").EnumerateObject())
                     {
-                        personalMatchStat.DeathByWeaponStats.Add(
+                        personalDeathByWeaponStatsList.Add(
                             new PersonalDeathByWeaponStat()
                             {
                                 Count = deathByWeapon.Value.GetUInt16(),
-                                Weapon = new Weapon()
-                                {
-                                    WeaponName = deathByWeapon.Name,
-                                }
+                                Weapon = GetWeapon(deathByWeapon.Name)
                             });
                     }
                 }
             }
 
+            context.SaveChanges();
+
+            foreach (var personalStat in curentMatch.PersonalsMatchStat)
+            {
+                personalStat.DeathByStats = (from deathByStat in personalDeathByStatsList
+                                             where deathByStat.MatchStat == personalStat
+                                             select deathByStat).ToList();
+
+                personalStat.KillStats = (from killStat in personalKillStatsList
+                                          where killStat.MatchStat == personalStat
+                                          select killStat).ToList();
+
+                personalStat.WeaponKillStats = (from weaponKillStat in personalWeaponKillStatsList
+                                                where weaponKillStat.MatchStat == personalStat
+                                                select weaponKillStat).ToList();
+
+                personalStat.DeathByWeaponStats = (from deathByWeaponStat in personalDeathByWeaponStatsList
+                                                   where deathByWeaponStat.MatchStat == personalStat
+                                                   select deathByWeaponStat).ToList();
+            }
+
+            context.SaveChanges();
+
             return curentMatch;
+
+            Map GetMap(string mapName)
+            {
+                Map result = (from m in context.Maps
+                              where m.MapName == mapName
+                              select m).FirstOrDefault();
+                if (result == null)
+                {
+                    result = (from m in context.Maps.Local
+                              where m.MapName == mapName
+                              select m).FirstOrDefault();
+
+                    if (result == null)
+                    {
+                        result = new Map()
+                        {
+                            MapName = mapName
+                        };
+                        context.Maps.Add(result);
+                    }
+                }
+                return result;
+            }
+
+            SteamProfile GetSteamProfile(SteamProfile profile)
+            {
+                SteamProfile result = (from s in context.SteamProfiles
+                                       where s.SteamID64 == profile.SteamID64
+                                       select s).FirstOrDefault();
+                if (result == null)
+                {
+                    result = (from s in context.SteamProfiles.Local
+                              where s.SteamID64 == profile.SteamID64
+                              select s).FirstOrDefault();
+
+                    if (result == null)
+                    {
+                        context.SteamProfiles.Add(profile);
+                        result = profile;
+                    }
+                }
+
+                result.SteamName = profile.SteamName;
+                return result;
+            }
+
+            Weapon GetWeapon(string weaponName)
+            {
+                Weapon result = (from w in context.Weapons
+                                 where w.WeaponName == weaponName
+                                 select w).FirstOrDefault();
+
+                if (result == null)
+                {
+                    result = (from m in context.Weapons.Local
+                              where m.WeaponName == weaponName
+                              select m).FirstOrDefault();
+                    if (result == null)
+                    {
+                        result = new Weapon()
+                        {
+                            WeaponName = weaponName
+                        };
+                        context.Weapons.Add(result);
+                    }
+                }
+                return result;
+            }
         }
     }
 }

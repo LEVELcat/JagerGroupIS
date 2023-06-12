@@ -23,11 +23,6 @@ namespace WebApp.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<PersonalWeaponKillStat>().HasKey(k => new { k.PmsID, k.WeaponID });
-            modelBuilder.Entity<PersonalDeathByWeaponStat>().HasKey(k => new { k.WeaponID, k.PmsID });
-            modelBuilder.Entity<PersonalKillStat>().HasKey(k => new { k.PmsID, k.SteamProfileID });
-            modelBuilder.Entity<PersonalDeathByStat>().HasKey(k => new { k.SteamProfileID, k.PmsID });
-
             base.OnModelCreating(modelBuilder);
         }
 

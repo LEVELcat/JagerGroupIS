@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApp.DbContexts
@@ -6,6 +6,9 @@ namespace WebApp.DbContexts
     [Table("PersonalDeathByWeaponStat")]
     public class PersonalDeathByWeaponStat
     {
+        [Key]
+        [Column("PdbwsID")]
+        public ulong ID { get; set; }
         [Column("PmsID")]
         public ulong PmsID { get; set; }
 
