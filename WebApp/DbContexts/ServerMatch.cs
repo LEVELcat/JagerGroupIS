@@ -12,9 +12,11 @@ namespace WebApp.DbContexts
 
         [Column("ServerID")]
         public uint ServerID { get; set; }
+        public virtual Server? Server { get; set; }
 
         [Column("MapID")]
         public ushort MapID { get; set; }
+        public virtual Map? Map { get; set; }
 
         [Column("ServerLocalMatchID")]
         public uint ServerLocalMatchId { get; set; }
@@ -27,10 +29,6 @@ namespace WebApp.DbContexts
 
         [Column("CreationTime")]
         public DateTime CreationTime { get; set; }
-
-        public virtual Server? Server { get; set; }
-
-        public virtual Map? Map { get; set; }
 
         public virtual List<PersonalMatchStat>? PersonalsMatchStat { get; set; }
     }

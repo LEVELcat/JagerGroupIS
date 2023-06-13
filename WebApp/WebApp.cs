@@ -64,12 +64,14 @@ namespace WebApp
 
         enum Command
         {
+            None,
             Exit,
             UpdateRconDB
         }
 
         static Dictionary<Command, string[]> commandDict = new Dictionary<Command, string[]>
         {
+            { Command.None, new[] { "" } }, //ALWAYS MUST BE FIRST IN COLLECTION
             { Command.Exit, new[] {"exit", "close", "shutdown"} },
             { Command.UpdateRconDB, new [] { "update" } }
         };
@@ -81,7 +83,12 @@ namespace WebApp
                 Console.WriteLine("¬ведите команду:");
                 string cmd = Console.ReadLine();
 
-                switch(commandDict.First(x => x.Value.Contains(cmd)).Key)
+                var test = commandDict.FirstOrDefault(x => x.Value.Contains(cmd));
+
+
+
+
+                switch ( commandDict.FirstOrDefault(x => x.Value.Contains(cmd)).Key)
                 {
                     case Command.Exit:
                         await app.StopAsync();

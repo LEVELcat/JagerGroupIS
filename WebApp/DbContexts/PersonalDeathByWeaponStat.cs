@@ -9,17 +9,18 @@ namespace WebApp.DbContexts
         [Key]
         [Column("PdbwsID")]
         public ulong ID { get; set; }
+
         [Column("PmsID")]
-        public ulong PmsID { get; set; }
+        public ulong PersonalMatchStatID { get; set; }
+        public virtual PersonalMatchStat? PersonalMatchStat { get; set; }
 
         [Column("WeaponID")]
         public ushort WeaponID { get; set; }
+        public virtual Weapon? Weapon { get; set; }
 
         [Column("Count")]
         public ushort Count { get; set; }
 
-        public virtual PersonalMatchStat? MatchStat { get; set; }
 
-        public virtual Weapon? Weapon { get; set; }
     }
 }

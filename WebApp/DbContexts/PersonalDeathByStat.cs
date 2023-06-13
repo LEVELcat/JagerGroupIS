@@ -11,16 +11,14 @@ namespace WebApp.DbContexts
         public ulong ID { get; set; }
 
         [Column("PmsID")]
-        public ulong PmsID { get; set; }
+        public ulong PersonalMatchStatID { get; set; }
+        public virtual PersonalMatchStat? PersonalMatchStat { get; set; }
 
         [Column("SteamProfileID")]
-        public ushort SteamProfileID { get; set; }
+        public uint SteamProfileID { get; set; }
+        public virtual SteamProfile? SteamProfile { get; set; }
 
         [Column("Count")]
         public ushort Count { get; set; }
-
-        public virtual PersonalMatchStat? MatchStat { get; set; }
-
-        public virtual SteamProfile? SteamProfile { get; set; }
     }
 }

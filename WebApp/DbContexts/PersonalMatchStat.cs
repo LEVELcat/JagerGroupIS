@@ -12,9 +12,11 @@ namespace WebApp.DbContexts
 
         [Column("ServerMatchID")]
         public uint MatchID { get; set; }
+        public virtual ServerMatch? Match { get; set; }
 
         [Column("SteamProfileID")]
         public uint SteamProfileID { get; set; }
+        public virtual SteamProfile? SteamProfile { get; set; }
 
         [Column("CombatPoint")]
         public ushort? Combat { get; set; }
@@ -44,7 +46,7 @@ namespace WebApp.DbContexts
         public ushort? Offensive { get; set; }
 
         [Column("ShortestLifeSecond")]
-        public ushort ShortestLife { get; set; }
+        public short ShortestLife { get; set; }
 
         [Column("Support")]
         public ushort? Support { get;set; }
@@ -56,9 +58,6 @@ namespace WebApp.DbContexts
         [Column("PlayTimeSeconds")]
         public short PlayTime { get; set; }
 
-        public virtual ServerMatch? Match { get; set; }
-
-        public virtual SteamProfile? SteamProfile { get; set; }
 
         public virtual List<PersonalKillStat>? KillStats { get; set; }
 
@@ -67,6 +66,5 @@ namespace WebApp.DbContexts
         public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
 
         public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
-
     }
 }
