@@ -33,7 +33,8 @@ namespace WebApp
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
             });
             builder.Services.AddTransient<StatisticDbContext>()
-                            .AddSingleton<RconUpdaterService>();
+                            .AddSingleton<RconUpdaterService>()
+                            .AddSingleton<DbUpdaterService>();
 
             var app = builder.Build();
 
@@ -66,14 +67,18 @@ namespace WebApp
         {
             None,
             Exit,
-            UpdateRconDB
+            UpdateRconDB,
+            BeginUpdateCycles,
+            CloseUpdateCycles
         }
 
         static Dictionary<Command, string[]> commandDict = new Dictionary<Command, string[]>
         {
             { Command.None, new[] { "" } }, //ALWAYS MUST BE FIRST IN COLLECTION
-            { Command.Exit, new[] {"exit", "close", "shutdown"} },
-            { Command.UpdateRconDB, new [] { "update" } }
+            { Command.Exit, new[] {"exit", "close", "shutdown", "ex"} },
+            { Command.UpdateRconDB, new [] { "update", "up" } },
+            { Command.BeginUpdateCycles, new [] { "cycle_start", "cS" } },
+            { Command.CloseUpdateCycles, new [] { "cycle_end", "cE" } },
         };
 
         private static async Task ConsoleControlCycle(WebApplication app)
@@ -83,18 +88,19 @@ namespace WebApp
                 Console.WriteLine("¬ведите команду:");
                 string cmd = Console.ReadLine();
 
-                var test = commandDict.FirstOrDefault(x => x.Value.Contains(cmd));
-
-
-
-
                 switch ( commandDict.FirstOrDefault(x => x.Value.Contains(cmd)).Key)
                 {
                     case Command.Exit:
                         await app.StopAsync();
                         goto exitGOTO;
                     case Command.UpdateRconDB:
-                        app.Services.GetService<RconUpdaterService>().UpdateStatisticDB();
+                        
+                        break;
+                    case Command.BeginUpdateCycles:
+                        app.Services.GetService<DbUpdaterService>()?.StartCycles();
+                        break;
+                    case Command.CloseUpdateCycles:
+                        app.Services.GetService<DbUpdaterService>()?.EndCycles();
                         break;
 
                     default:
