@@ -159,8 +159,6 @@ namespace WebApp.Services.RconScanerService
                     }
                 }
             }
-
-            context.SaveChanges();
             return curentMatch;
 
             Map GetMap(string mapName)
