@@ -31,8 +31,12 @@ namespace WebApp.DbContexts
 
 #else
             //RELESE
-            optionsBuilder.UseMySql("server=127.0.0.1:3306;user=remoteAdmin;password=;database=statDB;",
-                new MySqlServerVersion(new Version(8, 0, 25)));
+
+            //optionsBuilder.UseMySql("server=localhost;user=appUser;password=67%8#yG*isOp;database=statdb;",
+            //    new MySqlServerVersion(new Version(8, 0, 25)));
+
+            optionsBuilder.UseMySql("server=localhost;user=remoteAdmin;password=67%8#yG*isOp;database=statdb;",
+                  new MySqlServerVersion(new Version(8, 0, 25)));
 #endif
         }
     }

@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Globalization;
 using WebApp.DbContexts;
-using Microsoft.AspNetCore.HttpOverrides;
 using WebApp.Services.RconScanerService;
 
 namespace WebApp
@@ -9,15 +9,19 @@ namespace WebApp
     {
         public static async Task Main(string[] args)
         {
+
             CultureInfo ci = new CultureInfo("ru-RU");
             Thread.CurrentThread.CurrentCulture = ci;
             Thread.CurrentThread.CurrentUICulture = ci;
             Console.WriteLine("Hello World");
 
-            //DiscordApp.DiscordBot.AsyncMain(args);
+            DiscordApp.DiscordBot.AsyncMain(args);
             Console.WriteLine("Discord Bot Start");
 
             AspAppMain(args);
+
+
+            Console.ReadKey();
         }
 
         public static WebApplication Application;
@@ -51,7 +55,7 @@ namespace WebApp
 
             using (StatisticDbContext db = new StatisticDbContext())
             {
-
+                Console.WriteLine("Проверка соединения с БД");
                 Console.WriteLine(string.Concat(db.Servers.Select(x => x.Description)));
 
             }
@@ -69,7 +73,8 @@ namespace WebApp
             Exit,
             UpdateRconDB,
             BeginUpdateCycles,
-            CloseUpdateCycles
+            CloseUpdateCycles,
+            CheckDbConnection
         }
 
         static Dictionary<Command, string[]> commandDict = new Dictionary<Command, string[]>
@@ -79,6 +84,7 @@ namespace WebApp
             { Command.UpdateRconDB, new [] { "update", "up" } },
             { Command.BeginUpdateCycles, new [] { "cycle_start", "cS" } },
             { Command.CloseUpdateCycles, new [] { "cycle_end", "cE" } },
+            { Command.CheckDbConnection, new [] { "check_db_connection", "ch_db" } }
         };
 
         private static async Task ConsoleControlCycle(WebApplication app)
@@ -88,13 +94,13 @@ namespace WebApp
                 Console.WriteLine("Введите команду:");
                 string cmd = Console.ReadLine();
 
-                switch ( commandDict.FirstOrDefault(x => x.Value.Contains(cmd)).Key)
+                switch (commandDict.FirstOrDefault(x => x.Value.Contains(cmd)).Key)
                 {
                     case Command.Exit:
                         await app.StopAsync();
                         goto exitGOTO;
                     case Command.UpdateRconDB:
-                        
+
                         break;
                     case Command.BeginUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.StartCycles();
@@ -102,10 +108,20 @@ namespace WebApp
                     case Command.CloseUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.EndCycles();
                         break;
+                    case Command.CheckDbConnection:
+                        using (StatisticDbContext db = new StatisticDbContext())
+                        {
+                            Console.WriteLine("Проверка соединения с БД");
+                            Console.WriteLine(string.Concat(db.Servers.Select(x => x.Description)));
+                            Console.WriteLine(db.Servers.Count());
+                        }
+                        break;
 
                     default:
                         Console.WriteLine($"Команда {cmd} отсуствует");
                         break;
+
+
                 }
             }
 

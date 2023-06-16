@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApp.DbContexts
 {
-    [Table("PersonalWeaponKillStat")]
+    [Table("personalweaponkillstat")]
     public class PersonalWeaponKillStat
     {
         [Key]
