@@ -17,9 +17,9 @@ namespace DiscordApp
     {
         public static DiscordClient Client { get; private set; }
 
-        public static void Main(string[] args) => new DiscordBot().AsyncMain().GetAwaiter().GetResult();
+        public static void Main(string[] args) => DiscordBot.AsyncMain().GetAwaiter().GetResult();
 
-        private async Task AsyncMain(params string[] args)
+        public static async Task AsyncMain(params string[] args)
         {
             var discord = new DiscordClient(new DiscordConfiguration()
             {
