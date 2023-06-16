@@ -42,6 +42,9 @@ namespace WebApp.Services.RconScanerService
 
                     foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
                     {
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+
                         if (token.IsCancellationRequested) break;
 
                         ServerMatch match = MatchParser.ParseMatchStatisticAndAddToContext(json, server, Context);
