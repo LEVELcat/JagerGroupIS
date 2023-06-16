@@ -23,7 +23,7 @@ namespace WebApp.DbContexts
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseLazyLoadingProxies();
+            //optionsBuilder.UseLazyLoadingProxies();
 #if DEBUG
             //DEBUG
             optionsBuilder.UseMySql("server=localhost;user=root;password=0451;database=statDB;",
@@ -32,11 +32,11 @@ namespace WebApp.DbContexts
 #else
             //RELESE
 
-            //optionsBuilder.UseMySql("server=localhost;user=appUser;password=67%8#yG*isOp;database=statdb;",
-            //    new MySqlServerVersion(new Version(8, 0, 25)));
+            optionsBuilder.UseMySql("server=localhost;user=root;password=0451;database=statDB;",
+                new MySqlServerVersion(new Version(8, 0, 25)));
 
-            optionsBuilder.UseMySql("server=localhost;user=remoteAdmin;password=67%8#yG*isOp;database=statdb;",
-                  new MySqlServerVersion(new Version(8, 0, 25)));
+            //optionsBuilder.UseMySql("server=localhost;user=remoteAdmin;password=67%8#yG*isOp;database=statdb;",
+            //      new MySqlServerVersion(new Version(8, 0, 25)));
 #endif
         }
     }

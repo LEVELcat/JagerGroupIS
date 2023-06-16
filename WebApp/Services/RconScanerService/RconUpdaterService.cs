@@ -20,6 +20,7 @@ namespace WebApp.Services.RconScanerService
 
             foreach (var server in servers)
             {
+
                 if (server != null && server.ServerIsTracking == true)
                 {
                     RconStatGetter rconStat = new RconStatGetter(server.RconURL);
@@ -27,8 +28,9 @@ namespace WebApp.Services.RconScanerService
                     uint? lastServerLocalMatchId = rconStat.GetLastMatchId;
                     if (lastServerLocalMatchId < 0) continue;
 
-                    var outdatedMatch = (from m in server.Matches
-                                         where m.ServerLocalMatchId > lastServerLocalMatchId
+                    var outdatedMatch = (from m in Context.ServerMatches
+                                         where m.ServerID == server.ID &&
+                                         m.ServerLocalMatchId > lastServerLocalMatchId
                                          select m).ToList();
 
                     if (outdatedMatch.Count() > 0)
@@ -37,11 +39,13 @@ namespace WebApp.Services.RconScanerService
                         Context.SaveChanges();
                     }
 
-                    uint LastDbMatchId = (from m in server.Matches
-                                          select m.ServerLocalMatchId).Concat(new uint[] { 0 }).Max();
+                    uint LastDbMatchId = (from m in Context.ServerMatches
+                                          where m.ServerID == server.ID
+                                          select m).ToList().Select(x => x.ServerLocalMatchId).Concat(new uint[] { 0 }).Max();
 
                     foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
                     {
+
                         GC.Collect();
                         GC.WaitForPendingFinalizers();
 

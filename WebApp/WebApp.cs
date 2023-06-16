@@ -15,7 +15,7 @@ namespace WebApp
             Thread.CurrentThread.CurrentUICulture = ci;
             Console.WriteLine("Hello World");
 
-            DiscordApp.DiscordBot.AsyncMain(args);
+            //DiscordApp.DiscordBot.AsyncMain(args);
             Console.WriteLine("Discord Bot Start");
 
             AspAppMain(args);
@@ -97,17 +97,21 @@ namespace WebApp
                 switch (commandDict.FirstOrDefault(x => x.Value.Contains(cmd)).Key)
                 {
                     case Command.Exit:
+                        app.Services.GetService<DbUpdaterService>()?.EndCycles();
                         await app.StopAsync();
                         goto exitGOTO;
-                    case Command.UpdateRconDB:
 
+                    case Command.UpdateRconDB:
                         break;
+
                     case Command.BeginUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.StartCycles();
                         break;
+
                     case Command.CloseUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.EndCycles();
                         break;
+
                     case Command.CheckDbConnection:
                         using (StatisticDbContext db = new StatisticDbContext())
                         {
