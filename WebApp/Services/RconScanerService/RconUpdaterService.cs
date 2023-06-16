@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Data.Entity;
 using System.Text.Json;
 using WebApp.DbContexts;
 
@@ -8,65 +8,77 @@ namespace WebApp.Services.RconScanerService
     {
         public async Task UpdateStatisticDB(CancellationTokenSource CancellationTokenSource)
         {
-            using(StatisticDbContext Context = new StatisticDbContext())
+            CancellationToken token = CancellationTokenSource.Token;
+
+            Server[] servers = null;
+
+            using (StatisticDbContext Context = new StatisticDbContext())
             {
                 if (Context == null) return;
 
-                CancellationToken token = CancellationTokenSource.Token;
 
-                var servers = (from s in Context.Servers
-                               select s).ToArray();
 
-                foreach (var server in servers)
+                servers = (from s in Context.Servers.AsNoTracking()
+                           select s).ToArray();
+            }
+
+            if (servers == null) return;
+
+            foreach (var server in servers)
+            {
+                if (server != null && server.ServerIsTracking == true)
                 {
-                    if (server != null && server.ServerIsTracking == true)
+                    RconStatGetter rconStat = new RconStatGetter(server.RconURL);
+
+                    uint? lastServerLocalMatchId = rconStat.GetLastMatchId;
+                    if (lastServerLocalMatchId < 0) continue;
+
+                    uint LastDbMatchId = 0;
+
+                    using (StatisticDbContext deleteContext = new StatisticDbContext())
                     {
-                        RconStatGetter rconStat = new RconStatGetter(server.RconURL);
-
-                        uint? lastServerLocalMatchId = rconStat.GetLastMatchId;
-                        if (lastServerLocalMatchId < 0) continue;
-
-                        var outdatedMatch = (from m in server.Matches
-                                             where m.ServerLocalMatchId > lastServerLocalMatchId
+                        var outdatedMatch = (from m in deleteContext.ServerMatches
+                                             where m.ServerID == server.ID && m.ServerLocalMatchId > lastServerLocalMatchId
                                              select m).ToArray();
 
                         if (outdatedMatch.Count() > 0)
                         {
-                            Context.ServerMatches.RemoveRange(outdatedMatch);
-                            Context.SaveChanges();
+                            deleteContext.ServerMatches.RemoveRange(outdatedMatch);
+                            deleteContext.SaveChanges();
+
+
+
                         }
 
-                        uint LastDbMatchId = (from m in server.Matches
-                                              select m.ServerLocalMatchId).Concat(new uint[] { 0 }).Max();
+                        LastDbMatchId = (from m in deleteContext.ServerMatches.AsNoTracking()
+                                         where m.ServerID == server.ID
+                                         select m.ServerLocalMatchId).ToArray().Concat(new uint[] { 0 }).Max();
 
-                        foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
-                        {
-                            GC.Collect();
-
-                            if (token.IsCancellationRequested) break;
-
-                            using(StatisticDbContext localContext = new StatisticDbContext())
-                            {
-                                var localServer = localContext.Servers.FirstOrDefault(x => x.ID == server.ID);
-
-                                ServerMatch match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
-
-                                await localContext.SaveChangesAsync();
-
-                                Console.WriteLine($"MatchID {match.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");
-
-                                localContext.Dispose();
-                            }
-                        }
+                        deleteContext.DisposeAsync();
                     }
 
-                    if (token.IsCancellationRequested) break;
+                    foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
+                    {
+                        GC.Collect();
+
+                        if (token.IsCancellationRequested) break;
+
+                        using (StatisticDbContext localContext = new StatisticDbContext())
+                        {
+                            var localServer = localContext.Servers.AsNoTracking().FirstOrDefault(x => x.ID == server.ID);
+
+                            ServerMatch match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
+
+                            await localContext.SaveChangesAsync();
+
+                            Console.WriteLine($"MatchID {match.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");
+
+                            localContext.Dispose();
+                        }
+                    }
                 }
-                Context.Dispose();
+                if (token.IsCancellationRequested) break;
             }
-
-            
-
         }
     }
 }

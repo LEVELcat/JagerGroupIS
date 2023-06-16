@@ -22,6 +22,7 @@ namespace WebApp.Services.RconScanerService
                 CreationTime = resultPtr.GetProperty("creation_time").GetDateTime(),
 
                 Map = curentMap,
+                ServerID = server.ID,
                 Server = server,
 
                 PersonalsMatchStat = new List<PersonalMatchStat>()

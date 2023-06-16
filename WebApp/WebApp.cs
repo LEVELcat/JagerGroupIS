@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Data.Entity;
 using System.Globalization;
 using WebApp.DbContexts;
 using WebApp.Services.RconScanerService;
@@ -55,8 +56,9 @@ namespace WebApp
             using (StatisticDbContext db = new StatisticDbContext())
             {
                 Console.WriteLine("Проверка соединения с БД");
-                Console.WriteLine(string.Concat(db.Servers.Select(x => x.Description)));
+                Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
 
+                db.DisposeAsync();
             }
 
             app.RunAsync();
@@ -111,8 +113,9 @@ namespace WebApp
                         using (StatisticDbContext db = new StatisticDbContext())
                         {
                             Console.WriteLine("Проверка соединения с БД");
-                            Console.WriteLine(string.Concat(db.Servers.Select(x => x.Description)));
-                            Console.WriteLine(db.Servers.Count());
+                            Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
+                            Console.WriteLine(db.Servers.AsNoTracking().Count());
+                            db.DisposeAsync();
                         }
                         break;
 
