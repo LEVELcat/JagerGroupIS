@@ -26,7 +26,7 @@ namespace WebApp.Services.RconScanerService
 
                 PersonalsMatchStat = new List<PersonalMatchStat>()
             };
-            
+
             context.ServerMatches.Add(curentMatch);
 
             Dictionary<string, SteamProfile> localSteamProfile = new Dictionary<string, SteamProfile>();
@@ -49,6 +49,8 @@ namespace WebApp.Services.RconScanerService
                 steamProfile = GetSteamProfile(steamProfile);
 
                 localSteamProfile.Add(localNick, steamProfile);
+
+                //Console.WriteLine(localNick);
 
                 PersonalMatchStat personalMatchStat = new PersonalMatchStat()
                 {
@@ -91,29 +93,20 @@ namespace WebApp.Services.RconScanerService
 
             foreach (var playerStat in resultPtr.GetProperty("player_stats").EnumerateArray())
             {
-
                 string localNick = playerStat.GetProperty("player").GetString();
 
                 if (localSteamProfile.ContainsKey(localNick))
                 {
-
                     PersonalMatchStat? personalMatchStat = (from s in curentMatch.PersonalsMatchStat
                                                             where s.SteamProfile == localSteamProfile[localNick]
                                                             select s).FirstOrDefault();
 
-
                     if (personalMatchStat != null)
                     {
-                        Console.WriteLine(1);
-
                         foreach (var killstat in playerStat.GetProperty("most_killed").EnumerateObject())
                         {
-                            Console.WriteLine(10);
-
                             if (localSteamProfile.ContainsKey(killstat.Name))
                             {
-                                Console.WriteLine(11);
-
                                 personalMatchStat.KillStats.Add(
                                     new PersonalKillStat()
                                     {
@@ -122,10 +115,7 @@ namespace WebApp.Services.RconScanerService
                                         PersonalMatchStat = personalMatchStat
                                     });
                             }
-                            Console.WriteLine(12);
                         }
-
-                        Console.WriteLine(2);
 
                         foreach (var deathStat in playerStat.GetProperty("death_by").EnumerateObject())
                         {
@@ -141,7 +131,6 @@ namespace WebApp.Services.RconScanerService
                             }
 
                         }
-
                         foreach (var weaponKills in playerStat.GetProperty("weapons").EnumerateObject())
                         {
                             personalMatchStat.WeaponKillStats.Add(
@@ -171,14 +160,14 @@ namespace WebApp.Services.RconScanerService
                 }
             }
 
-
+            context.SaveChanges();
             return curentMatch;
 
             Map GetMap(string mapName)
             {
                 Map? result = (from m in context.Maps
                                where m.MapName == mapName
-                               select m).ToList().FirstOrDefault();
+                               select m).FirstOrDefault();
 
                 if (result == null)
                 {
@@ -214,13 +203,13 @@ namespace WebApp.Services.RconScanerService
             {
                 Weapon? result = (from w in context.Weapons
                                   where w.WeaponName == weaponName
-                                  select w).ToList().FirstOrDefault();
+                                  select w).FirstOrDefault();
 
                 if (result == null)
                 {
                     result = (from m in context.Weapons.Local
                               where m.WeaponName == weaponName
-                              select m).ToList().FirstOrDefault();
+                              select m).FirstOrDefault();
                     if (result == null)
                     {
                         result = new Weapon()
@@ -236,8 +225,6 @@ namespace WebApp.Services.RconScanerService
 
         private static Func<StatisticDbContext, ulong, SteamProfile?> SteamProfileByID =
             EF.CompileQuery((StatisticDbContext db, ulong ID64) =>
-                (from s in db.SteamProfiles
-                 where s.SteamID64 == ID64
-                 select s).SingleOrDefault());
+                db.SteamProfiles.SingleOrDefault(x => x.SteamID64 == ID64));
     }
 }

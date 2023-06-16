@@ -23,7 +23,7 @@ namespace DiscordApp
         {
             var discord = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "MTEwODAzNDk1MjEwMjE3MDczNQ.GD_udY.5ncKFEaLSwsUq7_TqSm9aNo8Kz8oWew76rVoe4",
+                Token = "token",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
