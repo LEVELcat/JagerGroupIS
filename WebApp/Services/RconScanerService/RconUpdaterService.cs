@@ -8,14 +8,14 @@ namespace WebApp.Services.RconScanerService
     {
         public async Task UpdateStatisticDB(CancellationTokenSource CancellationTokenSource)
         {
-            using(StatisticDbContext Context = WebApp.Application.Services.GetService<StatisticDbContext>())
+            using(StatisticDbContext Context = new StatisticDbContext())
             {
                 if (Context == null) return;
 
                 CancellationToken token = CancellationTokenSource.Token;
 
                 var servers = (from s in Context.Servers
-                               select s).ToList();
+                               select s).ToArray();
 
                 foreach (var server in servers)
                 {
@@ -28,7 +28,7 @@ namespace WebApp.Services.RconScanerService
 
                         var outdatedMatch = (from m in server.Matches
                                              where m.ServerLocalMatchId > lastServerLocalMatchId
-                                             select m).ToList();
+                                             select m).ToArray();
 
                         if (outdatedMatch.Count() > 0)
                         {
@@ -42,11 +42,10 @@ namespace WebApp.Services.RconScanerService
                         foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
                         {
                             GC.Collect();
-                            GC.WaitForPendingFinalizers();
 
                             if (token.IsCancellationRequested) break;
 
-                            using(StatisticDbContext localContext = WebApp.Application.Services.GetService<StatisticDbContext>())
+                            using(StatisticDbContext localContext = new StatisticDbContext())
                             {
                                 var localServer = localContext.Servers.FirstOrDefault(x => x.ID == server.ID);
 
@@ -55,12 +54,15 @@ namespace WebApp.Services.RconScanerService
                                 await localContext.SaveChangesAsync();
 
                                 Console.WriteLine($"MatchID {match.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");
+
+                                localContext.Dispose();
                             }
                         }
                     }
 
                     if (token.IsCancellationRequested) break;
                 }
+                Context.Dispose();
             }
 
             

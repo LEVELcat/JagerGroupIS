@@ -163,9 +163,7 @@ namespace WebApp.Services.RconScanerService
 
             Map GetMap(string mapName)
             {
-                Map? result = (from m in context.Maps
-                               where m.MapName == mapName
-                               select m).FirstOrDefault();
+                Map? result = context.Maps.SingleOrDefault(m => m.MapName == mapName); 
 
                 if (result == null)
                 {
@@ -199,15 +197,12 @@ namespace WebApp.Services.RconScanerService
 
             Weapon GetWeapon(string weaponName)
             {
-                Weapon? result = (from w in context.Weapons
-                                  where w.WeaponName == weaponName
-                                  select w).FirstOrDefault();
+                Weapon? result = context.Weapons.SingleOrDefault(x => x.WeaponName == weaponName);
 
                 if (result == null)
                 {
-                    result = (from m in context.Weapons.Local
-                              where m.WeaponName == weaponName
-                              select m).FirstOrDefault();
+                    result = context.Weapons.Local.SingleOrDefault(x => x.WeaponName == weaponName);
+
                     if (result == null)
                     {
                         result = new Weapon()

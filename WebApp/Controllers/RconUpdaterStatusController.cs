@@ -6,9 +6,9 @@ namespace WebApp.Controllers
 {
     public class RconUpdaterStatusController : Controller
     {
-        public string GetInfo([FromServices] StatisticDbContext service)
+        public string GetInfo()
         {
-            service = WebApp.Application.Services.GetService<StatisticDbContext>();
+            StatisticDbContext service = new StatisticDbContext();
 
             string result = service.Servers.First().Description;
             service.Dispose();

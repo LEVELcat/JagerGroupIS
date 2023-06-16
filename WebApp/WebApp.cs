@@ -36,8 +36,7 @@ namespace WebApp
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
             });
-            builder.Services.AddTransient<StatisticDbContext>()
-                            .AddSingleton<RconUpdaterService>()
+            builder.Services.AddSingleton<RconUpdaterService>()
                             .AddSingleton<DbUpdaterService>();
 
             var app = builder.Build();
