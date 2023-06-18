@@ -79,7 +79,7 @@ namespace WebApp.Services.RconScanerService
                             }
                             await localContext.SaveChangesAsync();
 
-                            Console.WriteLine($"MatchID {match.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");
+                            Console.WriteLine($"MatchID {match?.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");
 
                             localContext.Dispose();
                         }
