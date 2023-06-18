@@ -99,6 +99,7 @@ namespace WebApp
                 {
                     case Command.Exit:
                         await app.StopAsync();
+                        DiscordApp.DiscordBot.Close();
                         goto exitGOTO;
                     case Command.UpdateRconDB:
 

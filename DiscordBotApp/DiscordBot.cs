@@ -19,6 +19,11 @@ namespace DiscordApp
 
         public static void Main(string[] args) => DiscordBot.AsyncMain().GetAwaiter().GetResult();
 
+        public static void Close()
+        {
+            Client.DisconnectAsync().GetAwaiter().GetResult();
+        }
+
         public static async Task AsyncMain(params string[] args)
         {
             var discord = new DiscordClient(new DiscordConfiguration()
@@ -28,15 +33,11 @@ namespace DiscordApp
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
                 LogTimestampFormat = "MMM dd yyyy - hh:mm:ss tt"
-                
-                
             }) ;
 
             IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
             serviceCollection.AddSingleton<ElectionSingleton>();
             var services = serviceCollection.BuildServiceProvider();
-
-
 
             var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
             {
@@ -48,8 +49,6 @@ namespace DiscordApp
             commands.SetHelpFormatter<CustomHelpFormatter>();
 
             discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);
-
-
 
             await discord.ConnectAsync();
 

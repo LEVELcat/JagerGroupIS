@@ -67,8 +67,16 @@ namespace WebApp.Services.RconScanerService
                         {
                             var localServer = localContext.Servers.AsNoTracking().FirstOrDefault(x => x.ID == server.ID);
 
-                            ServerMatch match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
-
+                            ServerMatch match = null;
+                            try
+                            {
+                                match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex);
+                                Console.WriteLine(ex.Message);
+                            }
                             await localContext.SaveChangesAsync();
 
                             Console.WriteLine($"MatchID {match.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");

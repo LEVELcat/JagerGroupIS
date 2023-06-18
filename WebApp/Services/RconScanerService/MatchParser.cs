@@ -60,10 +60,10 @@ namespace WebApp.Services.RconScanerService
                     DeathsWithoutKillStreak = playerStat.GetProperty("deaths_without_kill_streak").GetUInt16(),
                     Kills = playerStat.GetProperty("kills").GetUInt16(),
                     KillStreak = playerStat.GetProperty("kills_streak").GetUInt16(),
-                    LongestLife = playerStat.GetProperty("longest_life_secs").GetUInt16(),
-                    ShortestLife = playerStat.GetProperty("shortest_life_secs").GetInt16(),
+                    LongestLife = playerStat.GetProperty("longest_life_secs").GetInt32(),
+                    ShortestLife = playerStat.GetProperty("shortest_life_secs").GetInt32(),
                     TeamKills = playerStat.GetProperty("teamkills").GetUInt16(),
-                    PlayTime = playerStat.GetProperty("time_seconds").GetInt16(),
+                    PlayTime = playerStat.GetProperty("time_seconds").GetInt32(),
 
                     //COMPATIBILITY WITH OLD API
                     Combat = playerStat.GetProperty("combat").ValueKind == JsonValueKind.Null ?

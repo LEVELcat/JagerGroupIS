@@ -40,13 +40,13 @@ namespace WebApp.DbContexts
         public ushort KillStreak { get; set; }
 
         [Column("LongestLifeSeconds")]
-        public ushort LongestLife { get; set; }
+        public int LongestLife { get; set; }
 
         [Column("OffensePoint")]
         public ushort? Offensive { get; set; }
 
         [Column("ShortestLifeSecond")]
-        public short ShortestLife { get; set; }
+        public int ShortestLife { get; set; }
 
         [Column("Support")]
         public ushort? Support { get;set; }
@@ -56,7 +56,7 @@ namespace WebApp.DbContexts
 
         //IN API IT CAN HAVE <0 VALUE LMAO
         [Column("PlayTimeSeconds")]
-        public short PlayTime { get; set; }
+        public int PlayTime { get; set; }
 
 
         public virtual List<PersonalKillStat>? KillStats { get; set; }
