@@ -16,7 +16,7 @@ namespace WebApp
             Thread.CurrentThread.CurrentUICulture = ci;
             Console.WriteLine("Hello World");
 
-            //DiscordApp.DiscordBot.AsyncMain(args);
+            DiscordApp.DiscordBot.AsyncMain(args);
             Console.WriteLine("Discord Bot Start");
 
             AspAppMain(args);
