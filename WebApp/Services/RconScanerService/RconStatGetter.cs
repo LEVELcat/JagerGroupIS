@@ -16,7 +16,7 @@ namespace WebApp.Services.RconScanerService
            new RconStatGetterCollection(baseURL);
         public RconStatGetterCollection GetLastMatches(int Count)
         {
-            if (Count <= 0) return null;
+            //if (Count <= 0) return null;
 
             var rcon = new RconStatGetterCollection(baseURL);
             int lastMatchID = Convert.ToInt32(rcon.GetLastMatchId().Value);

@@ -11,7 +11,7 @@ namespace WebApp.DbContexts
         public ushort ID { get; set; }
 
         [Column("GroupName")]
-        public string ServerGroupName { get; set; }
+        public string? ServerGroupName { get; set; }
 
         public virtual List<Server> Servers { get; set; }
     }
