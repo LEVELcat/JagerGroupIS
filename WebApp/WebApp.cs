@@ -21,7 +21,6 @@ namespace WebApp
 
             AspAppMain(args);
 
-
             Console.ReadKey();
         }
 
