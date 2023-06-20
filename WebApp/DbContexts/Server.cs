@@ -19,6 +19,11 @@ namespace WebApp.DbContexts
         [Column("ServerIsTracking")]
         public bool ServerIsTracking { get; set; }
 
+        [Column("ServerGroupID")]
+        public ushort ServerGroupID { get; set; }
+
+        public virtual ServerGroup? ServerGroup { get; set; }
+
         public virtual List<ServerMatch>? Matches { get; set; }
     }
 }

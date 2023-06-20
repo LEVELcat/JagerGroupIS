@@ -26,6 +26,8 @@ namespace WebApp.Services.RconScanerService
 
             foreach (var server in servers)
             {
+                Console.WriteLine($"начато сканирование {server.Description}");
+
                 if (server != null && server.ServerIsTracking == true)
                 {
                     RconStatGetter rconStat = new RconStatGetter(server.RconURL);
@@ -86,6 +88,8 @@ namespace WebApp.Services.RconScanerService
                     }
                 }
                 if (token.IsCancellationRequested) break;
+
+                Console.WriteLine($"просканирован полностью {server.Description}");
             }
         }
     }
