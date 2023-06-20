@@ -15,4 +15,12 @@ namespace WebApp.Controllers
             return result;
         }
     }
+
+    public class StatisticController : Controller
+    {
+
+
+
+
+    }
 }
