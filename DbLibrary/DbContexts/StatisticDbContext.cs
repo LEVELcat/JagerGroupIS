@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     public class StatisticDbContext : DbContext
     {

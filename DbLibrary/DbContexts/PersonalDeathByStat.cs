@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
-    [Table("personalkillstat")]
-    public class PersonalKillStat
+    [Table("personaldeathbystat")]
+    public class PersonalDeathByStat
     {
         [Key]
-        [Column("PksID")]
+        [Column("PdbsID")]
         public ulong ID { get; set; }
 
         [Column("PmsID")]
@@ -16,14 +16,9 @@ namespace WebApp.DbContexts
 
         [Column("SteamProfileID")]
         public uint SteamProfileID { get; set; }
-
         public virtual SteamProfile? SteamProfile { get; set; }
 
         [Column("Count")]
         public ushort Count { get; set; }
-
-
-
-
     }
 }

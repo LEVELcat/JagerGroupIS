@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using WebApp.DbContexts;
+using DbLibrary.DbContexts;
 
 namespace WebApp.Services.RconScanerService
 {

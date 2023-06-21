@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
-    [Table("personaldeathbyweaponstat")]
-    public class PersonalDeathByWeaponStat
+    [Table("personalweaponkillstat")]
+    public class PersonalWeaponKillStat
     {
         [Key]
-        [Column("PdbwsID")]
+        [Column("PwksID")]
         public ulong ID { get; set; }
 
         [Column("PmsID")]
@@ -20,7 +20,5 @@ namespace WebApp.DbContexts
 
         [Column("Count")]
         public ushort Count { get; set; }
-
-
     }
 }
