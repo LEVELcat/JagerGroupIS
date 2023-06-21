@@ -13,7 +13,6 @@ namespace DbLibrary.DbContexts
         [Column("MapName")]
         public string MapName { get; set; }
 
-
-        public virtual List<ServerMatch>? Matches { get; set; }
+        public virtual  List<ServerMatch>? Matches { get; set; }
     }
 }
