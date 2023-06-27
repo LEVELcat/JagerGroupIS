@@ -67,7 +67,7 @@ namespace WebApp.Services.RconScanerService
 
                         using (StatisticDbContext localContext = new StatisticDbContext())
                         {
-                            var localServer = localContext.Servers.AsNoTracking().FirstOrDefault(x => x.ID == server.ID);
+                            var localServer = localContext.Servers.AsNoTracking().SingleOrDefault(x => x.ID == server.ID);
 
                             ServerMatch match = null;
                             try
