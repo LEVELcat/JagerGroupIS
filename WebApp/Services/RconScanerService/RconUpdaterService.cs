@@ -8,6 +8,13 @@ namespace WebApp.Services.RconScanerService
     {
         public async Task UpdateStatisticDB(CancellationTokenSource CancellationTokenSource)
         {
+
+
+
+        }
+
+        public async Task UpdateStatisticDB(CancellationTokenSource CancellationTokenSource, bool isShitRealy)
+        {
             CancellationToken token = CancellationTokenSource.Token;
 
             Server[] servers = null;
@@ -16,10 +23,11 @@ namespace WebApp.Services.RconScanerService
             {
                 if (Context == null) return;
 
-
-
                 servers = (from s in Context.Servers.AsNoTracking()
                            select s).ToArray();
+
+
+
             }
 
             if (servers == null) return;
@@ -72,7 +80,7 @@ namespace WebApp.Services.RconScanerService
                             ServerMatch match = null;
                             try
                             {
-                                match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
+                                //match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
                             }
                             catch (Exception ex)
                             {

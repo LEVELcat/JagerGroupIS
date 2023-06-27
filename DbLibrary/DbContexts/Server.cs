@@ -24,6 +24,6 @@ namespace DbLibrary.DbContexts
 
         public virtual ServerGroup? ServerGroup { get; set; }
 
-        public virtual List<ServerMatch>? Matches { get; set; }
+        public virtual IEnumerable<ServerMatch>? Matches { get; set; }
     }
 }

@@ -30,6 +30,6 @@ namespace DbLibrary.DbContexts
         [Column("CreationTime")]
         public DateTime CreationTime { get; set; }
 
-        public virtual List<PersonalMatchStat>? PersonalsMatchStat { get; set; }
+        public virtual IEnumerable<PersonalMatchStat>? PersonalsMatchStat { get; set; }
     }
 }

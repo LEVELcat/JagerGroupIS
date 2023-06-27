@@ -59,12 +59,12 @@ namespace DbLibrary.DbContexts
         public int PlayTime { get; set; }
 
 
-        public virtual List<PersonalKillStat>? KillStats { get; set; }
+        public virtual IEnumerable<PersonalKillStat>? KillStats { get; set; }
 
-        public virtual List<PersonalDeathByStat>? DeathByStats { get; set; }
+        public virtual IEnumerable<PersonalDeathByStat>? DeathByStats { get; set; }
 
-        public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
+        public virtual IEnumerable<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
 
-        public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
+        public virtual IEnumerable<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
     }
 }

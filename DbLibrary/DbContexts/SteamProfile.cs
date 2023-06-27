@@ -19,9 +19,9 @@ namespace DbLibrary.DbContexts
         [Column("AvatarHash")]
         public string? AvatarHash { get; set; }
 
-        public virtual List<PersonalKillStat>? KillStats { get; set; }
-        public virtual List<PersonalDeathByStat>? DeathByStats { get; set; }
+        public virtual IEnumerable<PersonalKillStat>? KillStats { get; set; }
+        public virtual IEnumerable<PersonalDeathByStat>? DeathByStats { get; set; }
 
-        public virtual List<PersonalMatchStat>? MatchStats { get; set; }
+        public virtual IEnumerable<PersonalMatchStat>? MatchStats { get; set; }
     }
 }

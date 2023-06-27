@@ -13,7 +13,7 @@ namespace DbLibrary.DbContexts
         [Column("GroupName")]
         public string? ServerGroupName { get; set; }
 
-        public virtual List<Server> Servers { get; set; }
+        public virtual IEnumerable<Server> Servers { get; set; }
     }
 
 

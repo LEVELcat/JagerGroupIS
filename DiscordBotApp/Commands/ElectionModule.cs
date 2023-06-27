@@ -42,7 +42,7 @@ namespace DiscordBotApp.Commands
 
                 if(DateTime.TryParse(values[0] + " " + values[1], out DateTime result))
                 {
-                    var electionEmbed = ElectionCreateEmbedBuilder(ctx, result, values[2], values);
+                    var electionEmbed = ElectionCreateEmbedBuilder(ctx, result, values[2], values.ToList());
 
                     message = new DiscordMessageBuilder()
                         .WithContent("<@&898534300377567252>")
@@ -72,17 +72,25 @@ namespace DiscordBotApp.Commands
 
             }
 
-            private DiscordEmbedBuilder ElectionCreateEmbedBuilder(CommandContext ctx, DateTime dateTime, string Title, params string[] description)
+            private DiscordEmbedBuilder ElectionCreateEmbedBuilder(CommandContext ctx, DateTime dateTime, string Title, List<string> description)
             {
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
 
                 builder.WithTitle(Title);
 
-                string fullDiscript = string.Join('\n', description, 3, description.Length - 3) 
+                var imageURL = description.SingleOrDefault(x => x.StartsWith("URL="));
+                if(imageURL != string.Empty)
+                {
+                    description.Remove(imageURL);
+                    imageURL = imageURL.Split("URL=")[1];
+                }
+
+
+                string fullDiscript = string.Join('\n', description.GetRange(3, description.Count - 3))
                     +"\n\nНачало : " + Formatter.Timestamp(dateTime, TimestampFormat.LongDateTime) + " " + Formatter.Timestamp(dateTime).ToString();
 
                 builder.WithDescription(fullDiscript);
-                builder.AddField("<a:6093_Animated_Checkmark67:1112311399436255315>", "empty", true); //Будут
+                builder.AddField("<:emoji_134:941666424324239430>", "empty", true); //Будут
 
                 List<DiscordMember> claners;
                 GenerateElectionList(ctx.Guild, out claners);
@@ -90,7 +98,7 @@ namespace DiscordBotApp.Commands
                 CreateTechnicalChanelAndSetData(ctx, dateTime, claners);
 
                 string waiterListStr = string.Join('\n', claners.Select(x => '\\' + x.DisplayName));
-                builder.AddField("<a:vaxsign:1112311380465422346>", "empty", true); //отсуствуют
+                builder.AddField("<:1_:941666407513473054>", "empty", true); //отсуствуют
                 builder.AddField("<a:load:1112311359548444713>", "empty", true); //воздрежавшиеся
 
                 builder.Fields[0].Value = string.Empty;
@@ -98,7 +106,12 @@ namespace DiscordBotApp.Commands
                 builder.Fields[2].Value = waiterListStr;
 
                 builder.Color = new DiscordColor(255, 165, 0);
-                builder.WithImageUrl("https://cdn.discordapp.com/attachments/897797696516141057/1110576983018049667/5_.png");
+
+                if (imageURL == string.Empty)
+                    builder.WithImageUrl("https://cdn.discordapp.com/attachments/897797696516141057/1110576983018049667/5_.png");
+                else
+                    builder.WithImageUrl(imageURL);
+
 
                 return builder;
             }
@@ -130,8 +143,8 @@ namespace DiscordBotApp.Commands
 
             private DiscordComponent[] ReturnButtonComponents => new DiscordComponent[]
             {
-                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "em_aprove", string.Empty, emoji: new DiscordComponentEmoji(1112311399436255315)),
-                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "em_deny", string.Empty, emoji: new DiscordComponentEmoji(1112311380465422346)),
+                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "em_aprove", string.Empty, emoji: new DiscordComponentEmoji(941666424324239430)),
+                    new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "em_deny", string.Empty, emoji: new DiscordComponentEmoji(941666407513473054)),
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_update", "Обновить список"),
                     new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "em_delete", "🗑️")
             };
@@ -244,7 +257,7 @@ namespace DiscordBotApp.Commands
                 DiscordEmbed embed = componentInteraction.Message.Embeds[0];
 
                 //Будут
-                embed.Fields[0].Name = "<a:6093_Animated_Checkmark67:1112311399436255315> " + yesList.Count;
+                embed.Fields[0].Name = "<:emoji_134:941666424324239430> " + yesList.Count;
                 embed.Fields[0].Value = string.Join('\n', (from user in claners
                                                                                             where yesList.Contains(user.Id)
                                                                                             select user.DisplayName));
@@ -252,7 +265,7 @@ namespace DiscordBotApp.Commands
                 embed.Fields[0].Value = embed.Fields[0].Value.Replace("_", "\\_");
 
                 //Отсуствуют
-                embed.Fields[1].Name = "<a:vaxsign:1112311380465422346> " + noList.Count;
+                embed.Fields[1].Name = "<:1_:941666407513473054> " + noList.Count;
                 embed.Fields[1].Value = string.Join('\n', (from user in claners
                                                                                             where noList.Contains(user.Id)
                                                                                             select user.DisplayName));

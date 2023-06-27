@@ -13,8 +13,8 @@ namespace DbLibrary.DbContexts
         [Column("Name")]
         public string WeaponName { get; set; }
 
-        public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
-        public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
+        public virtual IEnumerable<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
+        public virtual IEnumerable<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
 
     }
 }
