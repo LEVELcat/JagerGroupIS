@@ -1,6 +1,6 @@
 using DbLibrary.DbContexts;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using WebApp.Services.RconScanerService;
 
@@ -114,7 +114,7 @@ namespace WebApp
                         {
                             Console.WriteLine("Проверка соединения с БД");
                             Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
-                            Console.WriteLine(db.Servers.AsNoTracking().Count());
+                            Console.WriteLine(await db.Servers.AsNoTracking().CountAsync());
                             db.DisposeAsync();
                         }
                         break;

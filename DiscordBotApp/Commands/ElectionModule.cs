@@ -99,7 +99,7 @@ namespace DiscordBotApp.Commands
 
                 string waiterListStr = string.Join('\n', claners.Select(x => '\\' + x.DisplayName));
                 builder.AddField("<:1_:941666407513473054>", "empty", true); //отсуствуют
-                builder.AddField("<a:load:1112311359548444713>", "empty", true); //воздрежавшиеся
+                builder.AddField("<a:load:1112311359548444713>", "empty", true); //воздрежавшиеся.
 
                 builder.Fields[0].Value = string.Empty;
                 builder.Fields[1].Value = string.Empty;

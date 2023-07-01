@@ -1,4 +1,6 @@
-﻿namespace WebApp.Services.RconScanerService
+﻿using Microsoft.Extensions.Logging;
+
+namespace WebApp.Services.RconScanerService
 {
     public class DbUpdaterService
     {
@@ -10,20 +12,28 @@
 
         public async void StartCycles(TimeSpan DelayBetwenCycles)
         {
+            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+
             EndCycles();
 
             cancelTokenSource = new CancellationTokenSource();
 
+            logger.LogDebug("Запуск цикла");
             UpdateCycle(DelayBetwenCycles, cancelTokenSource);
         }
 
         public void EndCycles()
         {
+            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+
+            logger.LogDebug("Остановка цикла");
             cancelTokenSource?.Cancel();
         }
 
         private async Task UpdateCycle(TimeSpan Delay, CancellationTokenSource CancellationTokenSource)
         {
+            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+
             CancellationToken token = CancellationTokenSource.Token;
 
             while (token.IsCancellationRequested == false)
@@ -33,7 +43,7 @@
                 await Task.Delay(Delay);
             }
 
-            Console.WriteLine("Cycle Is Terminated");
+            logger.LogDebug("Остановка цикла");
 
             CancellationTokenSource.Dispose();
         }
