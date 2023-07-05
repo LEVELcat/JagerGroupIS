@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     [Table("servergroup")]
     public class ServerGroup
@@ -11,9 +11,9 @@ namespace WebApp.DbContexts
         public ushort ID { get; set; }
 
         [Column("GroupName")]
-        public string ServerGroupName { get; set; }
+        public string? ServerGroupName { get; set; }
 
-        public virtual List<Server> Servers { get; set; }
+        public virtual ICollection<Server> Servers { get; set; }
     }
 
 

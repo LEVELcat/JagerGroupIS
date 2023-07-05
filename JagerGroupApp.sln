@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "WebApp\WebApp.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBotApp", "DiscordBotApp\DiscordBotApp.csproj", "{23E8BA93-6605-46CD-A8E7-4744C6B57E4D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbLibrary", "DbLibrary\DbLibrary.csproj", "{A5AB35FE-EECF-448F-91C5-6C8E4C3147A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{23E8BA93-6605-46CD-A8E7-4744C6B57E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23E8BA93-6605-46CD-A8E7-4744C6B57E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23E8BA93-6605-46CD-A8E7-4744C6B57E4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5AB35FE-EECF-448F-91C5-6C8E4C3147A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5AB35FE-EECF-448F-91C5-6C8E4C3147A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5AB35FE-EECF-448F-91C5-6C8E4C3147A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5AB35FE-EECF-448F-91C5-6C8E4C3147A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

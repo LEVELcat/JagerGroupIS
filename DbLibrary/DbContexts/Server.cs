@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     [Table("server")]
     public class Server
@@ -20,10 +20,10 @@ namespace WebApp.DbContexts
         public bool ServerIsTracking { get; set; }
 
         [Column("ServerGroupID")]
-        public ushort ServerGroupID { get; set; }
+        public ushort? ServerGroupID { get; set; }
 
         public virtual ServerGroup? ServerGroup { get; set; }
 
-        public virtual List<ServerMatch>? Matches { get; set; }
+        public virtual ICollection<ServerMatch>? Matches { get; set; }
     }
 }

@@ -1,6 +1,7 @@
-﻿using System.Data.Entity;
+﻿using DbLibrary.DbContexts;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using WebApp.DbContexts;
+using System.Text.RegularExpressions;
 
 namespace WebApp.Services.RconScanerService
 {
@@ -9,87 +10,113 @@ namespace WebApp.Services.RconScanerService
         public async Task UpdateStatisticDB(CancellationTokenSource CancellationTokenSource)
         {
             CancellationToken token = CancellationTokenSource.Token;
+            ILogger logger = WebApp.AppLogger;
+
+            logger.LogDebug("Создание serverContext");
 
             Server[] servers = null;
-
-            using (StatisticDbContext Context = new StatisticDbContext())
+            using (StatisticDbContext serverContext = new StatisticDbContext())
             {
-                if (Context == null) return;
+                servers = await (from s in serverContext.Servers
+                                 select s).AsNoTracking().ToArrayAsync();
 
+                logger.LogInformation("Список серверов получен");
 
-
-                servers = (from s in Context.Servers.AsNoTracking()
-                           select s).ToArray();
+                logger.LogDebug("Освобождение ресурсов serverContext");
+                await serverContext.DisposeAsync();
             }
-
-            if (servers == null) return;
 
             foreach (var server in servers)
             {
-                Console.WriteLine($"начато сканирование {server.Description}");
+                logger.LogInformation($"Начато сканирование {server.Description}");
 
-                if (server != null && server.ServerIsTracking == true)
+                if(server != null && server.ServerIsTracking == true)
                 {
                     RconStatGetter rconStat = new RconStatGetter(server.RconURL);
 
-                    uint? lastServerLocalMatchId = rconStat.GetLastMatchId;
-                    if (lastServerLocalMatchId < 0) continue;
+                    logger.LogDebug("Получение последнего ID матча");
 
-                    uint LastDbMatchId = 0;
+                    uint? lastRconServerMatchID = rconStat.GetLastMatchId;
+                    if (lastRconServerMatchID < 0) continue;
 
-                    using (StatisticDbContext deleteContext = new StatisticDbContext())
+                    logger.LogDebug("Создание outdatedMatchContext");
+
+                    uint lastDbMatchId = 0;
+                    using (StatisticDbContext outdatedMatchContext = new StatisticDbContext()) 
                     {
-                        var outdatedMatch = (from m in deleteContext.ServerMatches
-                                             where m.ServerID == server.ID && m.ServerLocalMatchId > lastServerLocalMatchId
-                                             select m).ToArray();
+                        logger.LogDebug("Получение списка матчей которые нужно удалить");
 
-                        if (outdatedMatch.Count() > 0)
+                        var outdatedMatch = await (from m in outdatedMatchContext.ServerMatches
+                                                   where m.ServerID == server.ID && m.ServerLocalMatchId > lastRconServerMatchID
+                                                   select m).AsNoTracking().ToArrayAsync();
+
+                        if (outdatedMatch.Length != 0)
                         {
-                            deleteContext.ServerMatches.RemoveRange(outdatedMatch);
-                            deleteContext.SaveChanges();
-
-
-
+                            logger.LogDebug("Удаление лишних матчей");
+                            outdatedMatchContext.ServerMatches.RemoveRange(outdatedMatch);
+                            await outdatedMatchContext.SaveChangesAsync();
                         }
 
-                        LastDbMatchId = (from m in deleteContext.ServerMatches.AsNoTracking()
-                                         where m.ServerID == server.ID
-                                         select m.ServerLocalMatchId).ToArray().Concat(new uint[] { 0 }).Max();
+                        logger.LogDebug("Получение ID последнего матча");
+                        lastDbMatchId = (await (from m in outdatedMatchContext.ServerMatches
+                                                where m.ServerID == server.ID
+                                                select m.ServerLocalMatchId).ToListAsync()).Max() is uint number ? number : 0;
 
-                        deleteContext.DisposeAsync();
+                        logger.LogDebug("Освобождение ресурсов outdatedMatchContext");
+                        await outdatedMatchContext.DisposeAsync();
                     }
 
-                    foreach (JsonDocument json in rconStat.GetLastMatches(lastServerLocalMatchId.Value - LastDbMatchId))
+                    logger.LogInformation("Старт цикла запросов из RCON API");
+
+                    foreach (JsonDocument json in rconStat.GetLastMatches(lastRconServerMatchID.Value - lastDbMatchId))
                     {
+                        logger.LogDebug("Старт сборки мусора");
                         GC.Collect();
 
-                        if (token.IsCancellationRequested) break;
-
-                        using (StatisticDbContext localContext = new StatisticDbContext())
+                        if (token.IsCancellationRequested)
                         {
-                            var localServer = localContext.Servers.AsNoTracking().FirstOrDefault(x => x.ID == server.ID);
+                            logger.LogInformation("Отмена цикла запросов по причине получения токена отмены");
+                            break;
+                        }
 
-                            ServerMatch match = null;
+                        using (StatisticDbContext matchContext = new StatisticDbContext())
+                        {
                             try
                             {
-                                match = MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, localContext);
+                                logger.LogDebug("Создание matchContext");
+
+                                logger.LogDebug("Парсинг json'а и запись в контекст");
+                                ServerMatch serverMatch = await MatchParser.ParseMatchStatisticAndAddToContext(json, server.ID, matchContext, CancellationTokenSource);
+                                logger.LogInformation("Парсинг json'а и запись в контекст завершен");
+
+                                logger.LogInformation($"MatchID {serverMatch?.ServerLocalMatchId}/{lastRconServerMatchID} saved");
+
+                                logger.LogDebug("Сохранение контекста");
+                                await matchContext.SaveChangesAsync();
+                                logger.LogInformation("Сохранение контекста завершено");
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine(ex);
-                                Console.WriteLine(ex.Message);
+                                logger.LogError(ex.ToString());
+                                logger.LogError(ex.Message);
                             }
-                            await localContext.SaveChangesAsync();
-
-                            Console.WriteLine($"MatchID {match?.ServerLocalMatchId}/{lastServerLocalMatchId} saved" + "\n..");
-
-                            localContext.Dispose();
+                            await matchContext.DisposeAsync();
                         }
+
+                        if (token.IsCancellationRequested)
+                        {
+                            logger.LogInformation("Отмена цикла запросов по причине получения токена отмены");
+                            break;
+                        }
+
+                        logger.LogDebug("Освобождение ресурсов matchContext");
                     }
                 }
-                if (token.IsCancellationRequested) break;
-
-                Console.WriteLine($"просканирован полностью {server.Description}");
+                if (token.IsCancellationRequested)
+                {
+                    logger.LogInformation("Отмена цикла проверки серверов по причине получения токена отмены");
+                    break;
+                }
             }
         }
     }

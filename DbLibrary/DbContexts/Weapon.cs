@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     [Table("weapon")]
     public class Weapon
@@ -13,8 +13,8 @@ namespace WebApp.DbContexts
         [Column("Name")]
         public string WeaponName { get; set; }
 
-        public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
-        public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
+        public virtual ICollection<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
+        public virtual ICollection<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
 
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     [Table("map")]
     public class Map
@@ -13,7 +13,6 @@ namespace WebApp.DbContexts
         [Column("MapName")]
         public string MapName { get; set; }
 
-
-        public virtual List<ServerMatch>? Matches { get; set; }
+        public virtual  ICollection<ServerMatch>? Matches { get; set; }
     }
 }

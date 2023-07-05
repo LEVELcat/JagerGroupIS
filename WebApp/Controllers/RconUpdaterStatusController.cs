@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WebApp.DbContexts;
-using WebApp.Services.RconScanerService;
+﻿using DbLibrary.DbContexts;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp.Controllers
 {
@@ -8,10 +7,13 @@ namespace WebApp.Controllers
     {
         public string GetInfo()
         {
-            StatisticDbContext service = new StatisticDbContext();
+            string result = string.Empty;
 
-            string result = service.Servers.First().Description;
-            service.Dispose();
+            using (StatisticDbContext context = new StatisticDbContext())
+            {
+                result = context.Servers.First().Description;
+                context.Dispose();
+            }
             return result;
         }
     }

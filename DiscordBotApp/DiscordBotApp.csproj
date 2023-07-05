@@ -13,4 +13,8 @@
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.4.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DbLibrary\DbLibrary.csproj" />
+  </ItemGroup>
+
 </Project>

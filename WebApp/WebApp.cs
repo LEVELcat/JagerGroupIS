@@ -1,7 +1,7 @@
+using DbLibrary.DbContexts;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
-using WebApp.DbContexts;
 using WebApp.Services.RconScanerService;
 
 namespace WebApp
@@ -21,17 +21,22 @@ namespace WebApp
 
             AspAppMain(args);
 
-
             Console.ReadKey();
         }
 
         public static WebApplication Application;
+        public static ILogger AppLogger
+        {
+            get => (LoggerFactory.Create(builder => builder.ClearProviders()
+                                                   //.AddDebug()
+                                                   .AddConsole()
+                                                   .SetMinimumLevel(LogLevel.Information))).CreateLogger<WebApp>();
+        }
 
         private static async void AspAppMain(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddControllersWithViews();
-
 
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
@@ -59,6 +64,15 @@ namespace WebApp
                 Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
 
                 db.DisposeAsync();
+            }
+
+
+            {
+                AppLogger.LogError("Тест логгера ошибки");
+                AppLogger.LogWarning("Тест логгера предупреждений");
+                AppLogger.LogCritical("Тест логгера крита");
+                AppLogger.LogInformation("Тест логгера информации");
+                AppLogger.LogDebug("Тест логгера дебага");
             }
 
             app.RunAsync();
@@ -115,7 +129,7 @@ namespace WebApp
                         {
                             Console.WriteLine("Проверка соединения с БД");
                             Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
-                            Console.WriteLine(db.Servers.AsNoTracking().Count());
+                            Console.WriteLine(await db.Servers.AsNoTracking().CountAsync());
                             db.DisposeAsync();
                         }
                         break;

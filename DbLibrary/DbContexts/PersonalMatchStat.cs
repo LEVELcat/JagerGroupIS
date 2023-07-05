@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     [Table("personalmatchstat")]
     public class PersonalMatchStat
@@ -59,12 +59,12 @@ namespace WebApp.DbContexts
         public int PlayTime { get; set; }
 
 
-        public virtual List<PersonalKillStat>? KillStats { get; set; }
+        public virtual ICollection<PersonalKillStat>? KillStats { get; set; }
 
-        public virtual List<PersonalDeathByStat>? DeathByStats { get; set; }
+        public virtual ICollection<PersonalDeathByStat>? DeathByStats { get; set; }
 
-        public virtual List<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
+        public virtual ICollection<PersonalWeaponKillStat>? WeaponKillStats { get; set; }
 
-        public virtual List<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
+        public virtual ICollection<PersonalDeathByWeaponStat>? DeathByWeaponStats { get; set; }
     }
 }

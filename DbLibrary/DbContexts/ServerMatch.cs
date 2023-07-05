@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApp.DbContexts
+namespace DbLibrary.DbContexts
 {
     [Table("servermatch")]
     public class ServerMatch
@@ -30,6 +30,6 @@ namespace WebApp.DbContexts
         [Column("CreationTime")]
         public DateTime CreationTime { get; set; }
 
-        public virtual List<PersonalMatchStat>? PersonalsMatchStat { get; set; }
+        public virtual ICollection<PersonalMatchStat>? PersonalsMatchStat { get; set; }
     }
 }

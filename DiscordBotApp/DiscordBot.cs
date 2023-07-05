@@ -13,7 +13,7 @@ using static DiscordBotApp.Commands.ElectionModule;
 
 namespace DiscordApp
 {
-    public class DiscordBot
+    public partial class DiscordBot
     {
         public static DiscordClient Client { get; private set; }
 
@@ -26,14 +26,7 @@ namespace DiscordApp
 
         public static async Task AsyncMain(params string[] args)
         {
-            var discord = new DiscordClient(new DiscordConfiguration()
-            {
-                Token = "token",
-                TokenType = TokenType.Bot,
-                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
-                MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
-                LogTimestampFormat = "MMM dd yyyy - hh:mm:ss tt"
-            }) ;
+            var discord = new DiscordClient(DiscordConfigurator.GetConfig());
 
             IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
             serviceCollection.AddSingleton<ElectionSingleton>();
