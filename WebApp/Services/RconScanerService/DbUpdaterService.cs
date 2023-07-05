@@ -12,7 +12,7 @@ namespace WebApp.Services.RconScanerService
 
         public async void StartCycles(TimeSpan DelayBetwenCycles)
         {
-            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+            ILogger logger = WebApp.AppLogger;
 
             EndCycles();
 
@@ -24,7 +24,7 @@ namespace WebApp.Services.RconScanerService
 
         public void EndCycles()
         {
-            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+            ILogger logger = WebApp.AppLogger;
 
             logger.LogDebug("Остановка цикла");
             cancelTokenSource?.Cancel();
@@ -32,7 +32,7 @@ namespace WebApp.Services.RconScanerService
 
         private async Task UpdateCycle(TimeSpan Delay, CancellationTokenSource CancellationTokenSource)
         {
-            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+            ILogger logger = WebApp.AppLogger;
 
             CancellationToken token = CancellationTokenSource.Token;
 

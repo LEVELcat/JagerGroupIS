@@ -32,6 +32,8 @@ namespace DbLibrary.DbContexts
 #else
             //RELESE
 
+            //IF IT'S RELEASE BUILD ON LOCAL DB
+            //
             //optionsBuilder.UseMySql("server=localhost;user=root;password=0451;database=statDB;",
             //    new MySqlServerVersion(new Version(8, 0, 25)));
 

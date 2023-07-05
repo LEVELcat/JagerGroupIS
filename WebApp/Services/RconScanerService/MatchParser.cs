@@ -1,14 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using DbLibrary.DbContexts;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace WebApp.Services.RconScanerService
 {
     static class MatchParser
     {
-        public static async Task<ServerMatch> ParseMatchStatisticAndAddToContext(JsonDocument json, Server server, StatisticDbContext context, CancellationTokenSource cancellationTokenSource)
+        public static async Task<ServerMatch> ParseMatchStatisticAndAddToContext(JsonDocument json, uint serverID, StatisticDbContext context, CancellationTokenSource cancellationTokenSource)
         {
-            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+            ILogger logger = WebApp.AppLogger;
 
             CancellationToken token = cancellationTokenSource.Token;
 
@@ -31,8 +32,9 @@ namespace WebApp.Services.RconScanerService
                 CreationTime = resultPtr.GetProperty("creation_time").GetDateTime(),
 
                 Map = curentMap,
-                ServerID = server.ID,
-                Server = server,
+                ServerID = serverID,
+                //ServerID = server.ID,
+                //Server = server,
 
                 PersonalsMatchStat = new List<PersonalMatchStat>()
             };
@@ -42,8 +44,14 @@ namespace WebApp.Services.RconScanerService
             Dictionary<string, SteamProfile> localSteamProfile = new Dictionary<string, SteamProfile>();
 
             logger.LogDebug("Старт цикла перебора игроков");
-            foreach (var playerStat in resultPtr.GetProperty("player_stat").EnumerateArray())
+            foreach (var playerStat in resultPtr.GetProperty("player_stats").EnumerateArray())
             {
+                if (playerStat.GetProperty("steaminfo").ValueKind == JsonValueKind.Null)
+                {
+                    logger.LogDebug("Отсуствует steam профиль");
+                    continue;
+                } 
+
                 var steaminfoPtr = playerStat.GetProperty("steaminfo").GetProperty("profile");
 
                 logger.LogDebug("Создание экземпляра профиля");
@@ -102,11 +110,11 @@ namespace WebApp.Services.RconScanerService
                 if(curentMatch.PersonalsMatchStat == null)
                 {
                     logger.LogDebug("Добавление пустого массива к коллекции матчей");
-                    curentMatch.PersonalsMatchStat = new PersonalMatchStat[0];
+                    curentMatch.PersonalsMatchStat = new List<PersonalMatchStat>();
                 }
 
                 logger.LogDebug("Присоединения персональной статистики к матчу");
-                curentMatch.PersonalsMatchStat = curentMatch.PersonalsMatchStat.Append(personalMatchStat);
+                curentMatch.PersonalsMatchStat.Add(personalMatchStat);
             }
 
             List<Weapon> localWeaponList = new List<Weapon>();
@@ -134,11 +142,11 @@ namespace WebApp.Services.RconScanerService
                                 if (personalMatchStat.KillStats == null)
                                 {
                                     logger.LogDebug("Добавление пустого массива в список убийств");
-                                    personalMatchStat.KillStats = new PersonalKillStat[0];
+                                    personalMatchStat.KillStats = new List<PersonalKillStat>();
                                 }
 
                                 logger.LogDebug("Присоединение статистики по убийствам к коллекции убийств");
-                                personalMatchStat.KillStats = personalMatchStat.KillStats.Append(new PersonalKillStat()
+                                personalMatchStat.KillStats.Add(new PersonalKillStat()
                                 {
                                     Count = killstat.Value.GetUInt16(),
                                     SteamProfile = localSteamProfile[killstat.Name],
@@ -156,11 +164,11 @@ namespace WebApp.Services.RconScanerService
                                 if (personalMatchStat.DeathByStats == null)
                                 {
                                     logger.LogDebug("Добавление пустого массива в список смертей");
-                                    personalMatchStat.DeathByStats = new PersonalDeathByStat[0];
+                                    personalMatchStat.DeathByStats = new List<PersonalDeathByStat>();
                                 }
 
                                 logger.LogDebug("Присоединение статистики по смертям к коллекции смертей");
-                                personalMatchStat.DeathByStats = personalMatchStat.DeathByStats.Append(new PersonalDeathByStat()
+                                personalMatchStat.DeathByStats.Add(new PersonalDeathByStat()
                                 {
                                     Count = deathStat.Value.GetUInt16(),
                                     SteamProfile = localSteamProfile[deathStat.Name],
@@ -176,11 +184,11 @@ namespace WebApp.Services.RconScanerService
                             if(personalMatchStat.WeaponKillStats == null)
                             {
                                 logger.LogDebug("Добавление пустого массива в список убийств из оружия");
-                                personalMatchStat.WeaponKillStats = new PersonalWeaponKillStat[0];
+                                personalMatchStat.WeaponKillStats = new List<PersonalWeaponKillStat>();
                             }
 
                             logger.LogDebug("Присоединение статистики по убийствам с оружия к коллекции убийств с оружием");
-                            personalMatchStat.WeaponKillStats = personalMatchStat.WeaponKillStats.Append(new PersonalWeaponKillStat()
+                            personalMatchStat.WeaponKillStats.Add(new PersonalWeaponKillStat()
                             {
                                 Count = weaponKills.Value.GetUInt16(),
                                 Weapon = await GetWeapon(weaponKills.Name),
@@ -199,11 +207,11 @@ namespace WebApp.Services.RconScanerService
                                 if (personalMatchStat.DeathByWeaponStats == null)
                                 {
                                     logger.LogDebug("Добавление пустого массива в коллекцию смертей от оружия");
-                                    personalMatchStat.DeathByWeaponStats = new PersonalDeathByWeaponStat[0];
+                                    personalMatchStat.DeathByWeaponStats = new List<PersonalDeathByWeaponStat>();
                                 }
 
                                 logger.LogDebug("Присоединение статистики по смертям от оружия к коллекции смертей от оружия");
-                                personalMatchStat.DeathByWeaponStats = personalMatchStat.DeathByWeaponStats.Append(new PersonalDeathByWeaponStat()
+                                personalMatchStat.DeathByWeaponStats.Add(new PersonalDeathByWeaponStat()
                                 {
                                     Count = deathsByWeapon.Value.GetUInt16(),
                                     Weapon = await GetWeapon(deathsByWeapon.Name),

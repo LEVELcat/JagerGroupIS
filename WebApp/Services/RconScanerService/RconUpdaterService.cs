@@ -10,20 +10,21 @@ namespace WebApp.Services.RconScanerService
         public async Task UpdateStatisticDB(CancellationTokenSource CancellationTokenSource)
         {
             CancellationToken token = CancellationTokenSource.Token;
-            ILogger logger = WebApp.Application.Services.GetService<ILogger>();
+            ILogger logger = WebApp.AppLogger;
 
             logger.LogDebug("Создание serverContext");
-            using StatisticDbContext serverContext = new StatisticDbContext();
 
-            logger.LogInformation("Получение списка серверов");
+            Server[] servers = null;
+            using (StatisticDbContext serverContext = new StatisticDbContext())
+            {
+                servers = await (from s in serverContext.Servers
+                                 select s).AsNoTracking().ToArrayAsync();
 
-            Server[] servers = await (from s in serverContext.Servers
-                                select s).AsNoTracking().ToArrayAsync();
+                logger.LogInformation("Список серверов получен");
 
-            logger.LogInformation("Список серверов получен");
-
-            logger.LogDebug("Освобождение ресурсов serverContext");
-            await serverContext.DisposeAsync();
+                logger.LogDebug("Освобождение ресурсов serverContext");
+                await serverContext.DisposeAsync();
+            }
 
             foreach (var server in servers)
             {
@@ -39,31 +40,31 @@ namespace WebApp.Services.RconScanerService
                     if (lastRconServerMatchID < 0) continue;
 
                     logger.LogDebug("Создание outdatedMatchContext");
-                    using StatisticDbContext outdatedMatchContext = new StatisticDbContext();
 
-                    logger.LogDebug("Получение списка матчей которые нужно удалить");
-
-                    var outdatedMatch = await (from m in outdatedMatchContext.ServerMatches
-                                               where m.ServerID == server.ID && m.ServerLocalMatchId > lastRconServerMatchID
-                                               select m).AsNoTracking().ToArrayAsync();
-
-                    if(outdatedMatch.Length != 0)
+                    uint lastDbMatchId = 0;
+                    using (StatisticDbContext outdatedMatchContext = new StatisticDbContext()) 
                     {
-                        logger.LogDebug("Удаление лишних матчей");
-                        outdatedMatchContext.ServerMatches.RemoveRange(outdatedMatch);
-                        await outdatedMatchContext.SaveChangesAsync();
+                        logger.LogDebug("Получение списка матчей которые нужно удалить");
+
+                        var outdatedMatch = await (from m in outdatedMatchContext.ServerMatches
+                                                   where m.ServerID == server.ID && m.ServerLocalMatchId > lastRconServerMatchID
+                                                   select m).AsNoTracking().ToArrayAsync();
+
+                        if (outdatedMatch.Length != 0)
+                        {
+                            logger.LogDebug("Удаление лишних матчей");
+                            outdatedMatchContext.ServerMatches.RemoveRange(outdatedMatch);
+                            await outdatedMatchContext.SaveChangesAsync();
+                        }
+
+                        logger.LogDebug("Получение ID последнего матча");
+                        lastDbMatchId = (await (from m in outdatedMatchContext.ServerMatches
+                                                where m.ServerID == server.ID
+                                                select m.ServerLocalMatchId).ToListAsync()).Max() is uint number ? number : 0;
+
+                        logger.LogDebug("Освобождение ресурсов outdatedMatchContext");
+                        await outdatedMatchContext.DisposeAsync();
                     }
-
-
-                    logger.LogDebug("Получение ID последнего матча");
-
-                    uint lastDbMatchId = (await (from m in outdatedMatchContext.ServerMatches
-                                          where m.ServerID == server.ID
-                                          select m.ServerLocalMatchId).ToListAsync()).Max() is uint number ? number : 0;
-
-                    logger.LogDebug("Освобождение ресурсов outdatedMatchContext");
-                    await outdatedMatchContext.DisposeAsync();
-
 
                     logger.LogInformation("Старт цикла запросов из RCON API");
 
@@ -78,31 +79,28 @@ namespace WebApp.Services.RconScanerService
                             break;
                         }
 
-                        logger.LogDebug("Создание matchContext");
-                        using StatisticDbContext matchContext = new StatisticDbContext();
-
-                        logger.LogDebug("Получение сервера");
-                        var localServer = matchContext.Servers.AsNoTracking().SingleOrDefault(x => x.ID == server.ID);
-
-                        ServerMatch serverMatch = null;
-
-                        try
+                        using (StatisticDbContext matchContext = new StatisticDbContext())
                         {
-                            logger.LogDebug("Парсинг json'а и запись в контекст");
-                            serverMatch = await MatchParser.ParseMatchStatisticAndAddToContext(json, localServer, matchContext, CancellationTokenSource);
-                            logger.LogInformation("Парсинг json'а и запись в контекст завершен");
+                            try
+                            {
+                                logger.LogDebug("Создание matchContext");
 
-                            logger.LogInformation($"MatchID {serverMatch?.ServerLocalMatchId}/{lastRconServerMatchID} saved");
+                                logger.LogDebug("Парсинг json'а и запись в контекст");
+                                ServerMatch serverMatch = await MatchParser.ParseMatchStatisticAndAddToContext(json, server.ID, matchContext, CancellationTokenSource);
+                                logger.LogInformation("Парсинг json'а и запись в контекст завершен");
 
+                                logger.LogInformation($"MatchID {serverMatch?.ServerLocalMatchId}/{lastRconServerMatchID} saved");
 
-                            logger.LogDebug("Сохранение контекста");
-                            await matchContext.SaveChangesAsync();
-                            logger.LogInformation("Сохранение контекста завершено");
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError(ex.ToString());
-                            logger.LogError(ex.Message);
+                                logger.LogDebug("Сохранение контекста");
+                                await matchContext.SaveChangesAsync();
+                                logger.LogInformation("Сохранение контекста завершено");
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogError(ex.ToString());
+                                logger.LogError(ex.Message);
+                            }
+                            await matchContext.DisposeAsync();
                         }
 
                         if (token.IsCancellationRequested)
@@ -112,7 +110,6 @@ namespace WebApp.Services.RconScanerService
                         }
 
                         logger.LogDebug("Освобождение ресурсов matchContext");
-                        matchContext.Dispose();
                     }
                 }
                 if (token.IsCancellationRequested)

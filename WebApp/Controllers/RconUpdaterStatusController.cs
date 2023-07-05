@@ -7,10 +7,13 @@ namespace WebApp.Controllers
     {
         public string GetInfo()
         {
-            StatisticDbContext context = new StatisticDbContext();
+            string result = string.Empty;
 
-            string result = context.Servers.First().Description;
-            context.Dispose();
+            using (StatisticDbContext context = new StatisticDbContext())
+            {
+                result = context.Servers.First().Description;
+                context.Dispose();
+            }
             return result;
         }
     }
