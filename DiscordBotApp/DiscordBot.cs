@@ -39,6 +39,7 @@ namespace DiscordApp
 
             });
             commands.RegisterCommands<ElectionModule>();
+            commands.RegisterCommands<StatisticModule>();
             commands.SetHelpFormatter<CustomHelpFormatter>();
 
             discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);

@@ -255,10 +255,19 @@ namespace WebApp.Services.RconScanerService
                     result = profile;
                     await context.SteamProfiles.AddAsync(profile);
                 }
-                else if(result.SteamName != profile.SteamName)
+                else 
                 {
-                    logger.LogDebug("Изменение имени в контексте");
-                    result.SteamName = profile.SteamName;
+                    if (result.SteamName != profile.SteamName)
+                    {
+                        logger.LogDebug("Изменение имени в контексте");
+                        result.SteamName = profile.SteamName;
+                    }
+
+                    if(result.AvatarHash != profile.AvatarHash)
+                    {
+                        logger.LogDebug("Изменение хэша аватара в контексте");
+                        result.AvatarHash = profile.AvatarHash;
+                    }
                 }
                 return result;
             }
