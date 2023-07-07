@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using DbLibrary.DbContexts;
+using DbLibrary.StatisticModel;
 using Microsoft.AspNetCore.Hosting.Server;
 
 namespace WebApp.Services.RconScanerService
@@ -60,6 +60,7 @@ namespace WebApp.Services.RconScanerService
                     SteamID64 = ulong.Parse(steaminfoPtr.GetProperty("steamid").GetString()),
                     SteamName = steaminfoPtr.GetProperty("personaname").GetString(),
                     AvatarHash = steaminfoPtr.GetProperty("avatarhash").GetString(),
+                    ProfileUpdtaded = DateTime.UtcNow,
 
                     DeathByStats = new List<PersonalDeathByStat>(),
                     KillStats = new List<PersonalKillStat>()
@@ -257,17 +258,28 @@ namespace WebApp.Services.RconScanerService
                 }
                 else 
                 {
-                    if (result.SteamName != profile.SteamName)
+                    if (result.ProfileUpdtaded == null)
+                        result.ProfileUpdtaded = DateTime.UtcNow;
+
+                    if(profile.ProfileUpdtaded > result.ProfileUpdtaded)
                     {
-                        logger.LogDebug("Изменение имени в контексте");
-                        result.SteamName = profile.SteamName;
+                        if (result.SteamName != profile.SteamName)
+                        {
+                            logger.LogDebug("Изменение имени в контексте");
+                            result.SteamName = profile.SteamName;
+                        }
+
+                        if (result.AvatarHash != profile.AvatarHash)
+                        {
+                            logger.LogDebug("Изменение хэша аватара в контексте");
+                            result.AvatarHash = profile.AvatarHash;
+                        }
+
+                        result.ProfileUpdtaded = result.ProfileUpdtaded;
+
                     }
 
-                    if(result.AvatarHash != profile.AvatarHash)
-                    {
-                        logger.LogDebug("Изменение хэша аватара в контексте");
-                        result.AvatarHash = profile.AvatarHash;
-                    }
+                    
                 }
                 return result;
             }

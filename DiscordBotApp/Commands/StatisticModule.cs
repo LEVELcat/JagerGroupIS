@@ -1,7 +1,7 @@
 ﻿using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using DbLibrary.DbContexts;
+using DbLibrary.StatisticModel;
 using Microsoft.EntityFrameworkCore;
 
 namespace DiscordBotApp.Commands
