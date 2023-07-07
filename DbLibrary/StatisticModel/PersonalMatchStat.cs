@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DbLibrary.DbContexts
+namespace DbLibrary.StatisticModel
 {
     [Table("personalmatchstat")]
     public class PersonalMatchStat

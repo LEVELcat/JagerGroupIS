@@ -1,4 +1,4 @@
-﻿using DbLibrary.DbContexts;
+﻿using DbLibrary.StatisticModel;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp.Controllers
