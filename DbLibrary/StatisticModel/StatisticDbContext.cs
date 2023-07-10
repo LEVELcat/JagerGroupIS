@@ -14,6 +14,7 @@ namespace DbLibrary.StatisticModel
         public DbSet<ServerMatch> ServerMatches { get; set; }
         public DbSet<SteamProfile> SteamProfiles { get; set; }
         public DbSet<Weapon> Weapons { get; set; }
+        public DbSet<ServerType> ServerTypes { get; set; }
 
         public StatisticDbContext() 
         {

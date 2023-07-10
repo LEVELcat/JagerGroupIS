@@ -12,5 +12,7 @@ namespace DbLibrary.StatisticModel
 
         [Column("Type")]
         public string? Type { get; set; }
+
+        public virtual ICollection<Server> Servers { get; set; }
     }
 }
