@@ -13,8 +13,12 @@ namespace DbLibrary.StatisticModel
         [Column("GroupName")]
         public string? ServerGroupName { get; set; }
 
+        [Column("ServerRconAdress")]
+        public string? RconAdress { get; set; }
+
+        [Column("ServerIsTracking")]
+        public bool IsTracking { get; set; }
+
         public virtual ICollection<Server> Servers { get; set; }
     }
-
-
 }

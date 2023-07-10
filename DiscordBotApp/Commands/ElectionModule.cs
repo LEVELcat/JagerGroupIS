@@ -17,14 +17,12 @@ namespace DiscordBotApp.Commands
     [ModuleLifespan(ModuleLifespan.Transient)]
     internal class ElectionModule : BaseCommandModule
     {
-        //[Command("matonAll")]
-        //public async Task MentaonAll(CommandContext ctx)
-        //{
-        //    var button = new DiscordButtonComponent(ButtonStyle.Secondary, "ido", String.Empty,
-        //        emoji: new DiscordComponentEmoji(ctx.Guild.Emojis.FirstOrDefault(x => x.Value.Name == "jscatpawscratch").Value));
+        [Command("echo")]
+        public async Task SendMessage(CommandContext ctx, params string[] values)
+        {
+            ctx.Member.SendMessageAsync(string.Join(' ', values));
+        }
 
-        //    await ctx.RespondAsync(new DiscordMessageBuilder().WithContent("отобразись блядь").AddComponents(button));
-        //}
 
         [Command("event")]
         public async Task CreateElectionEvent(CommandContext ctx, params string[] values)

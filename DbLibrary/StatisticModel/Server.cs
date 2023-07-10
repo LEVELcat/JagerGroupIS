@@ -10,19 +10,22 @@ namespace DbLibrary.StatisticModel
         [Column("ServerID")]
         public uint ID { get; set; }
 
-        [Column("ServerAdress")]
-        public string RconURL { get; set; }
-
-        [Column("ServerDescription")]
-        public string? Description { get; set; }
-
-        [Column("ServerIsTracking")]
-        public bool ServerIsTracking { get; set; }
+        [Column("ServerName")]
+        public string? ServerName { get; set; }
 
         [Column("ServerGroupID")]
-        public ushort? ServerGroupID { get; set; }
-
+        public ushort ServerGroupID { get; set; }
         public virtual ServerGroup? ServerGroup { get; set; }
+
+        [Column("ServerNumber")]
+        public byte ServerNumber { get; set; }
+
+        [Column("ServerTypeID")]
+        public ushort? ServerTypeID { get; set; }
+        public virtual ServerType? ServerType { get; set; }
+
+
+
 
         public virtual ICollection<ServerMatch>? Matches { get; set; }
     }
