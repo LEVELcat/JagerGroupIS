@@ -100,7 +100,7 @@ namespace WebApp.Services.RconScanerService
                                 logger.LogError(ex.ToString());
                                 logger.LogError(ex.Message);
                             }
-                            await matchContext.DisposeAsync();
+                            matchContext.DisposeAsync();
                         }
 
                         if (token.IsCancellationRequested)

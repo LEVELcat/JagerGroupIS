@@ -60,7 +60,7 @@ namespace WebApp.Services.RconScanerService
                     SteamID64 = ulong.Parse(steaminfoPtr.GetProperty("steamid").GetString()),
                     SteamName = steaminfoPtr.GetProperty("personaname").GetString(),
                     AvatarHash = steaminfoPtr.GetProperty("avatarhash").GetString(),
-                    ProfileUpdtaded = DateTime.UtcNow,
+                    ProfileUpdtaded = curentMatch.CreationTime,
 
                     DeathByStats = new List<PersonalDeathByStat>(),
                     KillStats = new List<PersonalKillStat>()
