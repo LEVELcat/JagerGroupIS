@@ -21,11 +21,8 @@ namespace DbLibrary.StatisticModel
         public byte ServerNumber { get; set; }
 
         [Column("ServerTypeID")]
-        public ushort? ServerTypeID { get; set; }
+        public byte? ServerTypeID { get; set; }
         public virtual ServerType? ServerType { get; set; }
-
-
-
 
         public virtual ICollection<ServerMatch>? Matches { get; set; }
     }
