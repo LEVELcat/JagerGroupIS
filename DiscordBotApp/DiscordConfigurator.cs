@@ -1,4 +1,5 @@
 ﻿using DSharpPlus;
+using DSharpPlus.Interactivity;
 
 namespace DiscordApp
 {
@@ -12,9 +13,18 @@ namespace DiscordApp
                 {
                     Token = "token",
                     TokenType = TokenType.Bot,
-                    Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
-                    MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
+                    //Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
+                    Intents = DiscordIntents.All,
+                    MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Information,
                     LogTimestampFormat = "MMM dd yyyy - hh:mm:ss tt"
+                };
+            }
+
+            public static InteractivityConfiguration GetInteractivityConfiguration()
+            {
+                return new InteractivityConfiguration()
+                {
+                    
                 };
             }
         }
