@@ -24,9 +24,6 @@ namespace DiscordBotApp.Commands
                 var res = await message.WaitForSelectAsync("drop", TimeSpan.FromSeconds(20));
                 ctx.Message.DeleteAsync();
                 message.DeleteAsync();
-
-
-
             }
 
             private async Task<DiscordMessageBuilder> GiveDropdown(CommandContext ctx, params string[] values)
