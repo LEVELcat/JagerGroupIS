@@ -36,7 +36,7 @@ namespace DiscordBotApp.Commands
             {
                 try
                 {
-                    SteamProfile steamProfile = await dbContext.SteamProfiles.SingleOrDefaultAsync(s => s.SteamID64 == Steam64ID);
+                    SteamProfile steamProfile = await dbContext.SteamProfiles.FirstOrDefaultAsync(s => s.SteamID64 == Steam64ID);
 
                     if (steamProfile == null)
                     {

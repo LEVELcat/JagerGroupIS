@@ -76,7 +76,7 @@ namespace DiscordBotApp.Commands
 
                 builder.WithTitle(Title);
 
-                var imageURL = description.SingleOrDefault(x => x.StartsWith("URL="));
+                var imageURL = description.FirstOrDefault(x => x.StartsWith("URL="));
                 if(imageURL != string.Empty)
                 {
                     description.Remove(imageURL);
