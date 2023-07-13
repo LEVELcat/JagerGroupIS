@@ -14,7 +14,7 @@ namespace DbLibrary.StatisticModel
         public string? ServerGroupName { get; set; }
 
         [Column("ServerRconAdress")]
-        public string? RconAdress { get; set; }
+        public string? RconURL { get; set; }
 
         [Column("ServerIsTracking")]
         public bool IsTracking { get; set; }

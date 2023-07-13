@@ -7,7 +7,7 @@ namespace WebApp.Services.RconScanerService
 {
     static class MatchParser
     {
-        public static async Task<ServerMatch> ParseMatchStatisticAndAddToContext(JsonDocument json, uint serverID, StatisticDbContext context, CancellationTokenSource cancellationTokenSource)
+        public static async Task<ServerMatch> ParseMatchStatisticAndAddToContext(JsonDocument json, ushort serverGroupID, StatisticDbContext context, CancellationTokenSource cancellationTokenSource)
         {
             ILogger logger = WebApp.AppLogger;
 
@@ -23,6 +23,8 @@ namespace WebApp.Services.RconScanerService
 
             Map curentMap = await GetMap(resultPtr.GetProperty("map_name").GetString());
 
+            Server curentServer = await GetServer(resultPtr.GetProperty("server_number").GetByte(), serverGroupID);
+
             logger.LogDebug("Создание экземпляра матча");
             ServerMatch curentMatch = new ServerMatch()
             {
@@ -32,9 +34,7 @@ namespace WebApp.Services.RconScanerService
                 CreationTime = resultPtr.GetProperty("creation_time").GetDateTime(),
 
                 Map = curentMap,
-                ServerID = serverID,
-                //ServerID = server.ID,
-                //Server = server,
+                Server = curentServer,
 
                 PersonalsMatchStat = new List<PersonalMatchStat>()
             };
@@ -130,7 +130,7 @@ namespace WebApp.Services.RconScanerService
                 {
                     logger.LogDebug("Получение персональой статистики из коллекции");
                     PersonalMatchStat? personalMatchStat = curentMatch.PersonalsMatchStat
-                        .SingleOrDefault(p => p.SteamProfile == localSteamProfile[localNick]);
+                        .FirstOrDefault(p => p.SteamProfile == localSteamProfile[localNick]);
 
                     if(personalMatchStat != null)
                     {
@@ -233,7 +233,7 @@ namespace WebApp.Services.RconScanerService
             async Task<Map> GetMap(string mapName)
             {
                 logger.LogDebug("Получение карты из БД");
-                Map? result = await context.Maps.SingleOrDefaultAsync(m => m.MapName == mapName);
+                Map? result = await context.Maps.FirstOrDefaultAsync(m => m.MapName == mapName);
 
                 if (result == null)
                 {
@@ -248,7 +248,7 @@ namespace WebApp.Services.RconScanerService
             async Task<SteamProfile> GetSteamProfile(SteamProfile profile)
             {
                 logger.LogDebug("Получение профиля из БД");
-                SteamProfile? result = await context.SteamProfiles.SingleOrDefaultAsync(s => s.SteamID64 == profile.SteamID64);
+                SteamProfile? result = await context.SteamProfiles.FirstOrDefaultAsync(s => s.SteamID64 == profile.SteamID64);
 
                 if(result == null)
                 {
@@ -287,20 +287,44 @@ namespace WebApp.Services.RconScanerService
             async Task<Weapon> GetWeapon(string weaponName)
             {
                 logger.LogDebug("Получение оружия из БД");
-                Weapon? result = await context.Weapons.SingleOrDefaultAsync(x => x.WeaponName == weaponName);
+                Weapon? result = await context.Weapons.FirstOrDefaultAsync(x => x.WeaponName == weaponName);
 
                 if (result == null)
                 {
                     logger.LogDebug("Получение оружия из локальных данных");
-                    result = localWeaponList.SingleOrDefault(x => x.WeaponName == weaponName);
+                    result = localWeaponList.FirstOrDefault(x => x.WeaponName == weaponName);
 
                     if(result == null)
                     {
                         logger.LogDebug("Добавление оружия в контекст");
                         result = new Weapon() { WeaponName = weaponName };
 
+                        localWeaponList.Add(result);
+
                         await context.Weapons.AddAsync(result);
                     }
+                }
+                return result;
+            }
+
+            async Task<Server> GetServer(byte serverNumber, ushort serverGroupID)
+            {
+                logger.LogDebug("Получение сервера из БД");
+
+                Server? result = await context.Servers.FirstOrDefaultAsync(s => s.ServerGroupID == serverGroupID && s.ServerNumber == serverNumber);
+
+                if(result == null)
+                {
+                    logger.LogDebug("Добавление сервера в БД");
+
+                    result = new Server()
+                    {
+                        ServerGroupID = serverGroupID,
+                        ServerNumber = serverNumber,
+                        ServerName = null,
+                        ServerTypeID = 1
+                    };
+                    await context.Servers.AddAsync(result);
                 }
                 return result;
             }

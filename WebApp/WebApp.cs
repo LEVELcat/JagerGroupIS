@@ -28,9 +28,13 @@ namespace WebApp
         public static ILogger AppLogger
         {
             get => (LoggerFactory.Create(builder => builder.ClearProviders()
-                                                   //.AddDebug()
                                                    .AddConsole()
+#if DEBUG
+                                                   .SetMinimumLevel(LogLevel.Debug))).CreateLogger<WebApp>();
+#else
                                                    .SetMinimumLevel(LogLevel.Information))).CreateLogger<WebApp>();
+#endif
+
         }
 
         private static async void AspAppMain(string[] args)
@@ -61,7 +65,7 @@ namespace WebApp
             using (StatisticDbContext db = new StatisticDbContext())
             {
                 Console.WriteLine("Проверка соединения с БД");
-                Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
+                Console.WriteLine(db.ServerGroups.SingleAsync().Result.ServerGroupName);
 
                 db.DisposeAsync();
             }
@@ -89,17 +93,17 @@ namespace WebApp
             UpdateRconDB,
             BeginUpdateCycles,
             CloseUpdateCycles,
-            CheckDbConnection
+            //CheckDbConnection
         }
 
         static Dictionary<Command, string[]> commandDict = new Dictionary<Command, string[]>
         {
             { Command.None, new[] { "" } }, //ALWAYS MUST BE FIRST IN COLLECTION
             { Command.Exit, new[] {"exit", "close", "shutdown", "ex"} },
-            { Command.UpdateRconDB, new [] { "update", "up" } },
+            //{ Command.UpdateRconDB, new [] { "update", "up" } },
             { Command.BeginUpdateCycles, new [] { "cycle_start", "cS" } },
             { Command.CloseUpdateCycles, new [] { "cycle_end", "cE" } },
-            { Command.CheckDbConnection, new [] { "check_db_connection", "ch_db" } }
+            //{ Command.CheckDbConnection, new [] { "check_db_connection", "ch_db" } }
         };
 
         private static async Task ConsoleControlCycle(WebApplication app)
@@ -115,24 +119,16 @@ namespace WebApp
                         await app.StopAsync();
                         DiscordApp.DiscordBot.Close();
                         goto exitGOTO;
-                    case Command.UpdateRconDB:
-
-                        break;
+                    //case Command.UpdateRconDB:
+                    //    break;
                     case Command.BeginUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.StartCycles();
                         break;
                     case Command.CloseUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.EndCycles();
                         break;
-                    case Command.CheckDbConnection:
-                        using (StatisticDbContext db = new StatisticDbContext())
-                        {
-                            Console.WriteLine("Проверка соединения с БД");
-                            Console.WriteLine(string.Concat(db.Servers.AsNoTracking().Select(x => x.Description)));
-                            Console.WriteLine(await db.Servers.AsNoTracking().CountAsync());
-                            db.DisposeAsync();
-                        }
-                        break;
+                    //case Command.CheckDbConnection:
+                    //    break;
 
                     default:
                         Console.WriteLine($"Команда {cmd} отсуствует");
