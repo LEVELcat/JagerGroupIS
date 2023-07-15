@@ -6,6 +6,8 @@ using DSharpPlus.AsyncEvents;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using System.Reflection;
@@ -27,6 +29,7 @@ namespace DiscordApp
         public static async Task AsyncMain(params string[] args)
         {
             var discord = new DiscordClient(DiscordConfigurator.GetConfig());
+            discord.UseInteractivity(DiscordConfigurator.GetInteractivityConfiguration());
 
             IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
             serviceCollection.AddSingleton<ElectionSingleton>();
@@ -40,7 +43,8 @@ namespace DiscordApp
             });
             commands.RegisterCommands<ElectionModule>();
             commands.RegisterCommands<StatisticModule>();
-            commands.SetHelpFormatter<CustomHelpFormatter>();
+            commands.RegisterCommands<TestModule>();
+            //commands.SetHelpFormatter<CustomHelpFormatter>();
 
             discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);
 
