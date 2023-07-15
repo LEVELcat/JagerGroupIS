@@ -119,16 +119,12 @@ namespace WebApp
                         await app.StopAsync();
                         DiscordApp.DiscordBot.Close();
                         goto exitGOTO;
-                    //case Command.UpdateRconDB:
-                    //    break;
                     case Command.BeginUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.StartCycles();
                         break;
                     case Command.CloseUpdateCycles:
                         app.Services.GetService<DbUpdaterService>()?.EndCycles();
                         break;
-                    //case Command.CheckDbConnection:
-                    //    break;
 
                     default:
                         Console.WriteLine($"Команда {cmd} отсуствует");

@@ -13,17 +13,21 @@ namespace DiscordBotApp.Commands
         public async Task SendMessage(CommandContext ctx, params string[] values)
         {
             new DropDownMaker().MakeMessage(ctx, values);
+
+            Console.WriteLine(DiscordApp.DiscordBot.Client);
         }
 #endif
         class DropDownMaker
         {
             public async void MakeMessage(CommandContext ctx, params string[] values)
             {
-                var message = await ctx.Member.SendMessageAsync(await GiveDropdown(ctx, values));
+                //var message = await ctx.Member.SendMessageAsync(await GiveDropdown(ctx, values));
+                var message = await ctx.Channel.SendMessageAsync(await GiveDropdown(ctx, values));
 
                 var res = await message.WaitForSelectAsync("drop", TimeSpan.FromSeconds(20));
+
                 ctx.Message.DeleteAsync();
-                message.DeleteAsync();
+                //message.DeleteAsync();
             }
 
             private async Task<DiscordMessageBuilder> GiveDropdown(CommandContext ctx, params string[] values)
@@ -59,11 +63,61 @@ namespace DiscordBotApp.Commands
 
                 var dropdown = new DiscordSelectComponent("drop", null, option, false, 1, 2);
 
-                messageBuilder.AddComponents(dropdown);
+                //messageBuilder.AddComponents(dropdown);
+
+                var roles = new DiscordRoleSelectComponent("afsfa", "ffff");
+
+                messageBuilder.AddComponents(roles);
+
                 messageBuilder.AddComponents(new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "test", "sending", false));
 
                 return messageBuilder;
             }
+
+
+        }
+
+        [Command("drops")]
+        public async Task  SendDrop(CommandContext ctx, params string[] values)
+        {
+            new DropMaker().MakeMessage(ctx, values);
+        }
+
+        class DropMaker
+        {
+            public async void MakeMessage(CommandContext ctx, params string[] values)
+            {
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+                //var roles = ctx.Guild.Roles.ToArray();
+
+                //var option = new List<DiscordSelectComponentOption>();
+
+                //foreach(var role in roles) 
+                //{
+                //    option.Add(
+                //        new DiscordSelectComponentOption(
+                //            role.Value.Name, 
+                //            role.Value.Id.ToString()
+                //            ));
+                //}
+
+                var dropdown = new DiscordRoleSelectComponent("roles", null);
+
+                //var dropdown = new DiscordSelectComponent("roles", null, option, minOptions: 1, maxOptions: roles.Length);
+
+                messageBuilder.WithContent("asda");
+                messageBuilder.AddComponents(dropdown);
+
+                var message = await ctx.Channel.SendMessageAsync(messageBuilder);
+
+                var res = await message.WaitForSelectAsync("roles", TimeSpan.FromMinutes(2));
+
+                ctx.Message.DeleteAsync();
+                //message.DeleteAsync();
+            }
+
+
 
 
         }

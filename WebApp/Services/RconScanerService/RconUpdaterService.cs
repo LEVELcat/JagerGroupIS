@@ -13,8 +13,6 @@ namespace WebApp.Services.RconScanerService
 #if DEBUG
             try
             {
-
-
 #endif
 
 
