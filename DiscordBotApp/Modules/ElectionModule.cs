@@ -12,6 +12,7 @@ using System.Security.Cryptography.X509Certificates;
 using DSharpPlus.Interactivity;
 using DiscordApp;
 using DbLibrary.JagerDsModel;
+using DSharpPlus.Interactivity.Extensions;
 
 namespace DiscordBotApp.Commands
 {
@@ -326,79 +327,158 @@ namespace DiscordBotApp.Commands
 
                 DiscordMessageBuilder menuMessageBuilder = new DiscordMessageBuilder();
                 menuMessageBuilder.WithContent("Тут менюшка");
-                menuMessageBuilder.AddComponents(GetMenuButton());
+                menuMessageBuilder.AddComponents(GetMenuButtonRows().AsEnumerable());
+
+                var viewMessage = await ctx.Member.SendMessageAsync(viewMessageBuilder);
+                var menuMessage = await ctx.Member.SendMessageAsync(menuMessageBuilder);
+
+                DiscordChannel channel = viewMessage.Channel;
 
                 while (true)
                 {
-                    var viewMessage =  ctx.Member.SendMessageAsync(viewMessageBuilder).Result;
-                    var menuMessage =  ctx.Member.SendMessageAsync(menuMessageBuilder).Result;
+                    var respond = await menuMessage.WaitForButtonAsync(TimeSpan.FromMinutes(10));
+
+                    if (respond.TimedOut)
+                    {
+                        viewMessage.DeleteAsync();
+                        menuMessage.DeleteAsync();
+                        ctx.Member.SendMessageAsync("Время вышло");
+                        break;
+                    }
+
+                    try
+                    {
+                        var txt = new TextInputComponent("Blablalbalef", "HuyVrot");
+
+                        DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
+                        responseBuilder.WithTitle("Text Fueld");
+                        responseBuilder.WithCustomId("textfuilder");
+                        responseBuilder.AddComponents(txt);
+
+                        var input = ctx.Client.GetInteractivity();
+
+                        await respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.Modal, responseBuilder);
+
+                        var res = await input.WaitForModalAsync("textfuilder");
+
+                        Console.WriteLine(res);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
 
 
-                    break;
+
+                    switch (respond.Result.Id)
+                    {
+                        case "menu1":
+                            var temp = await ctx.Member.SendMessageAsync("Напишите снизу название ивента");
+
+                            var mess = await channel.GetNextMessageAsync(TimeSpan.FromSeconds(30));
+
+                            if(mess.TimedOut == false)
+                            {
+                                embedBuilder.Title = mess.Result.Content;
+                                viewMessageBuilder.Embed = embedBuilder;
+
+                            }
+                            temp.DeleteAsync();
+
+                            break;
+                        case "menu2":
+                            break;
+                        case "menu3":
+                            break;
+                        case "menu4":
+                            break;
+                        case "menu5":
+                            break;
+                        case "menu6":
+                            break;
+                        case "menu7":
+                            break;
+                        case "menu8":
+                            break;
+                        case "menu9":
+                            break;
+
+                    }
+
+                    //viewMessageBuilder.Content += $"Комманда {respond.Result.Id} исполнена\n";
+
+                    viewMessage.ModifyAsync(viewMessageBuilder);
+
                 }
 
                 return (null, null);
 
-
-
-                DiscordComponent[] GetMenuButton() => new DiscordComponent[]
+                DiscordActionRowComponent[] GetMenuButtonRows() => new DiscordActionRowComponent[]
+                {
+                    new DiscordActionRowComponent(_firstPart()),
+                    new DiscordActionRowComponent(_secondPart()),
+                };
+                DiscordComponent[] _firstPart() => new DiscordComponent[]
                 {
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu1",
-                        "Меню1"
+                        "Поменять название"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu2",
-                        "Меню2"
+                        "Поменять время ивента"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu3",
-                        "Меню3"
+                        "Поменять описание"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu4",
-                        "Меню4"
+                        "Изменить картинку сбоку"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu5",
-                        "Меню5"
-                    ),
+                        "Изменить картинку снизу"
+                    )
+                };
+                DiscordComponent[] _secondPart() => new DiscordComponent[]
+                {
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu6",
-                        "Меню6"
+                        "Изменить цвет слева"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu7",
-                        "Меню7"
+                        "Настроить параметры голосования"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu8",
-                        "Меню8"
+                        "Изменить нижнюю иконку"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Primary,
+                        ButtonStyle.Secondary,
                         "menu9",
-                        "Меню9"
+                        "Изменить описание нижней иконки"
                     ),
                 };
-
             }
 
 
