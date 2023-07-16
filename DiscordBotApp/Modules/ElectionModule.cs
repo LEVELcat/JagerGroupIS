@@ -11,20 +11,14 @@ using DSharpPlus.EventArgs;
 using System.Security.Cryptography.X509Certificates;
 using DSharpPlus.Interactivity;
 using DiscordApp;
+using DbLibrary.JagerDsModel;
 
 namespace DiscordBotApp.Commands
 {
     [ModuleLifespan(ModuleLifespan.Transient)]
     internal class ElectionModule : BaseCommandModule
     {
-        [Command("echo")]
-        public async Task SendMessage(CommandContext ctx, params string[] values)
-        {
-            ctx.Member.SendMessageAsync(string.Join(' ', values));
-        }
-
-
-        [Command("event")]
+        [Command("eventOLD")]
         public async Task CreateElectionEvent(CommandContext ctx, params string[] values)
         {
             new ElectionSingleton().CreateMessage(ctx, values);
@@ -286,6 +280,142 @@ namespace DiscordBotApp.Commands
                 componentInteraction.Message.ModifyAsync(builder);
             }
         }
+
+
+        [Command("event")]
+        public async Task EventCommandInvoke(CommandContext ctx)
+        {
+            new ElectionFactory().CreateElection(ctx);
+        }
+
+        public class ElectionFactory
+        {
+            public async Task CreateElection(CommandContext ctx)
+            {
+                var option = ConstructElection(ctx);
+
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+                //DiscordEmbedBuilder embed = 
+
+            }
+
+            private async Task<(DiscordEmbedBuilder, Election)> ConstructElection(CommandContext ctx)
+            {
+                Election election = new Election()
+                {
+                    BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList
+                };
+
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+
+                embedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
+                embedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
+                embedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
+
+                embedBuilder.Title = "Название";
+                embedBuilder.Timestamp = DateTime.Now;
+                embedBuilder.WithFooter("Тут какой то отступ c иконкой", "https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
+                embedBuilder.WithDescription("Описание");
+                embedBuilder.WithThumbnail("https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
+                embedBuilder.WithImageUrl("https://w.forfun.com/fetch/42/429f04f158ff611068a6eba8af8fe776.jpeg?w=1470&r=0.5625");
+
+
+                DiscordMessageBuilder viewMessageBuilder = new DiscordMessageBuilder();
+                viewMessageBuilder.WithEmbed(embedBuilder);
+
+                DiscordMessageBuilder menuMessageBuilder = new DiscordMessageBuilder();
+                menuMessageBuilder.WithContent("Тут менюшка");
+                menuMessageBuilder.AddComponents(GetMenuButton());
+
+                while (true)
+                {
+                    var viewMessage =  ctx.Member.SendMessageAsync(viewMessageBuilder).Result;
+                    var menuMessage =  ctx.Member.SendMessageAsync(menuMessageBuilder).Result;
+
+
+                    break;
+                }
+
+                return (null, null);
+
+
+
+                DiscordComponent[] GetMenuButton() => new DiscordComponent[]
+                {
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu1",
+                        "Меню1"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu2",
+                        "Меню2"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu3",
+                        "Меню3"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu4",
+                        "Меню4"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu5",
+                        "Меню5"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu6",
+                        "Меню6"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu7",
+                        "Меню7"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu8",
+                        "Меню8"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Primary,
+                        "menu9",
+                        "Меню9"
+                    ),
+                };
+
+            }
+
+
+            private Task<DiscordMessageBuilder> CreateBaseMessage(params string[] values)
+            {
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+
+                return null;
+            }
+
+
+
+
+
+        }
+
     }
 
 
