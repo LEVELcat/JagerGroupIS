@@ -13,6 +13,7 @@ using DSharpPlus.Interactivity;
 using DiscordApp;
 using DbLibrary.JagerDsModel;
 using DSharpPlus.Interactivity.Extensions;
+using System.Net.Http.Headers;
 
 namespace DiscordBotApp.Commands
 {
@@ -283,7 +284,7 @@ namespace DiscordBotApp.Commands
         }
 
 
-        [Command("event")]
+        [Command("ev")]
         public async Task EventCommandInvoke(CommandContext ctx)
         {
             new ElectionFactory().CreateElection(ctx);
@@ -303,6 +304,8 @@ namespace DiscordBotApp.Commands
 
             private async Task<(DiscordEmbedBuilder, Election)> ConstructElection(CommandContext ctx)
             {
+                ctx.Message.DeleteAsync();
+
                 Election election = new Election()
                 {
                     BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList
@@ -315,11 +318,11 @@ namespace DiscordBotApp.Commands
                 embedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
 
                 embedBuilder.Title = "Название";
-                embedBuilder.Timestamp = DateTime.Now;
-                embedBuilder.WithFooter("Тут какой то отступ c иконкой", "https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
+                //embedBuilder.Timestamp = DateTime.Now;
+                //embedBuilder.WithFooter("Тут какой то отступ c иконкой", "https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
                 embedBuilder.WithDescription("Описание");
-                embedBuilder.WithThumbnail("https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
-                embedBuilder.WithImageUrl("https://w.forfun.com/fetch/42/429f04f158ff611068a6eba8af8fe776.jpeg?w=1470&r=0.5625");
+                //mbedBuilder.WithThumbnail("https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
+                //embedBuilder.WithImageUrl("https://w.forfun.com/fetch/42/429f04f158ff611068a6eba8af8fe776.jpeg?w=1470&r=0.5625");
 
 
                 DiscordMessageBuilder viewMessageBuilder = new DiscordMessageBuilder();
@@ -329,87 +332,138 @@ namespace DiscordBotApp.Commands
                 menuMessageBuilder.WithContent("Тут менюшка");
                 menuMessageBuilder.AddComponents(GetMenuButtonRows().AsEnumerable());
 
-                var viewMessage = await ctx.Member.SendMessageAsync(viewMessageBuilder);
-                var menuMessage = await ctx.Member.SendMessageAsync(menuMessageBuilder);
+                var viewMessage = await ctx.Channel.SendMessageAsync(viewMessageBuilder);
+                var menuMessage = await ctx.Channel.SendMessageAsync(menuMessageBuilder);
 
                 DiscordChannel channel = viewMessage.Channel;
 
+                bool isExit = false;
+
                 while (true)
                 {
+                    viewMessage.ModifyAsync(viewMessageBuilder);
+
                     var respond = await menuMessage.WaitForButtonAsync(TimeSpan.FromMinutes(10));
 
                     if (respond.TimedOut)
                     {
+                        isExit = true;
+                    }
+                    else
+                    {
+                        switch (respond.Result.Id)
+                        {
+                            case "menu1":
+
+                                var input = ctx.Client.GetInteractivity();
+
+                                DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
+                                responseBuilder.WithTitle("Настройки");
+                                responseBuilder.WithCustomId("settingModal");
+
+                                responseBuilder.AddComponents(new TextInputComponent("Название", "name"));
+                                responseBuilder.AddComponents(new TextInputComponent("Дата события", "date", value: DateTime.Now.ToString()));
+                                responseBuilder.AddComponents(new TextInputComponent("Описание события", "desc", style: TextInputStyle.Paragraph));
+                                responseBuilder.AddComponents(new TextInputComponent("URL большой картинки снизу", "image", required: false));
+                                responseBuilder.AddComponents(new TextInputComponent("URL картинки справа", "thumb", required: false));
+
+                                await respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.Modal, responseBuilder);
+
+                                var txtResponce = await input.WaitForModalAsync("settingModal", TimeSpan.FromMinutes(20));
+
+                                if (txtResponce.TimedOut)
+                                {
+                                    isExit = true;
+                                }
+                                else
+                                {
+                                    txtResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                                    var values = txtResponce.Result.Values;
+
+                                    if (values["name"] != string.Empty)
+                                        embedBuilder.Title = values["name"];
+
+                                    if (values["desc"] != string.Empty)
+                                        embedBuilder.Description = values["desc"];
+
+                                    if (values["date"] != string.Empty)
+                                    {
+                                        election.StartTime = DateTime.Now;
+                                        if (DateTime.TryParse(values["date"], out DateTime result))
+                                        {
+                                            election.EndTime = result;
+
+                                            embedBuilder.Description += "\n" + "Начало : " + Formatter.Timestamp(result, TimestampFormat.LongDateTime) + " " +
+                                                                        " " + Formatter.Timestamp(result).ToString();
+                                        }
+                                    }
+
+                                    if(values["image"] != string.Empty)
+                                        embedBuilder.ImageUrl = values["image"];
+
+                                    if (values["thumb"] != string.Empty)
+                                        embedBuilder.WithThumbnail(values["thumb"]);
+
+                                    viewMessageBuilder.Embed = embedBuilder;
+                                }
+                                break;
+                            case "menu2":
+
+                                var input2 = ctx.Client.GetInteractivity();
+
+                                DiscordInteractionResponseBuilder responseBuilder2 = new DiscordInteractionResponseBuilder();
+                                responseBuilder2.WithTitle("Настройки");
+                                responseBuilder2.WithCustomId("settingModal2");
+
+                                responseBuilder2.AddComponents(new TextInputComponent("Подпись снизу", "footerText", required: false));
+                                responseBuilder2.AddComponents(new TextInputComponent("URL Иконки возле подписи", "footerIcon", required: false));
+                                responseBuilder2.AddComponents(new TextInputComponent("Цвета слева (НЕ РАБОТАЕТ ПОКА ЧТО)", "footerIcon", required: false));
+
+                                await respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.Modal, responseBuilder2);
+
+                                var txtResponce2 = await input2.WaitForModalAsync("settingModal2", TimeSpan.FromMinutes(20));
+
+                                if (txtResponce2.TimedOut)
+                                {
+                                    isExit = true;
+                                }
+                                else
+                                {
+                                    txtResponce2.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                                    var values = txtResponce2.Result.Values;
+
+                                    if(values["footerText"] != string.Empty && values["footerIcon"] != string.Empty)
+                                        embedBuilder.WithFooter(values["footerText"], values["footerIcon"]);
+                                    else if (values["footerText"] != string.Empty)
+                                        embedBuilder.WithFooter(text: values["footerText"]);
+                                    //NOT WORKING WITHOUT FOOTER_TEXT
+                                    //else if (values["footerIcon"] != string.Empty)
+                                    //    embedBuilder.WithFooter(iconUrl: values["footerIcon"]);
+
+                                    viewMessageBuilder.Embed = embedBuilder;
+                                }
+                                break;
+                            case "menu3":
+                                break;
+                            case "menu4":
+                                break;
+                            case "menu8":
+                                break;
+                            case "menu9":
+                                break;
+
+                        }
+                    }
+
+
+                    if (isExit == true)
+                    {
                         viewMessage.DeleteAsync();
                         menuMessage.DeleteAsync();
-                        ctx.Member.SendMessageAsync("Время вышло");
                         break;
                     }
-
-                    try
-                    {
-                        var txt = new TextInputComponent("Blablalbalef", "HuyVrot");
-
-                        DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
-                        responseBuilder.WithTitle("Text Fueld");
-                        responseBuilder.WithCustomId("textfuilder");
-                        responseBuilder.AddComponents(txt);
-
-                        var input = ctx.Client.GetInteractivity();
-
-                        await respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.Modal, responseBuilder);
-
-                        var res = await input.WaitForModalAsync("textfuilder");
-
-                        Console.WriteLine(res);
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex);
-                    }
-
-
-
-                    switch (respond.Result.Id)
-                    {
-                        case "menu1":
-                            var temp = await ctx.Member.SendMessageAsync("Напишите снизу название ивента");
-
-                            var mess = await channel.GetNextMessageAsync(TimeSpan.FromSeconds(30));
-
-                            if(mess.TimedOut == false)
-                            {
-                                embedBuilder.Title = mess.Result.Content;
-                                viewMessageBuilder.Embed = embedBuilder;
-
-                            }
-                            temp.DeleteAsync();
-
-                            break;
-                        case "menu2":
-                            break;
-                        case "menu3":
-                            break;
-                        case "menu4":
-                            break;
-                        case "menu5":
-                            break;
-                        case "menu6":
-                            break;
-                        case "menu7":
-                            break;
-                        case "menu8":
-                            break;
-                        case "menu9":
-                            break;
-
-                    }
-
-                    //viewMessageBuilder.Content += $"Комманда {respond.Result.Id} исполнена\n";
-
-                    viewMessage.ModifyAsync(viewMessageBuilder);
-
                 }
 
                 return (null, null);
@@ -425,59 +479,42 @@ namespace DiscordBotApp.Commands
                     (
                         ButtonStyle.Secondary,
                         "menu1",
-                        "Поменять название"
+                        "Настройка №1"
                     ),
                     new DiscordButtonComponent
                     (
                         ButtonStyle.Secondary,
                         "menu2",
-                        "Поменять время ивента"
+                        "Настройка №2"
                     ),
                     new DiscordButtonComponent
                     (
                         ButtonStyle.Secondary,
                         "menu3",
-                        "Поменять описание"
+                        "Настроить роли участвующие в событии"
                     ),
                     new DiscordButtonComponent
                     (
                         ButtonStyle.Secondary,
                         "menu4",
-                        "Изменить картинку сбоку"
+                        "Настроить списки людей на события"
                     ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu5",
-                        "Изменить картинку снизу"
-                    )
+
                 };
                 DiscordComponent[] _secondPart() => new DiscordComponent[]
                 {
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Secondary,
-                        "menu6",
-                        "Изменить цвет слева"
-                    ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu7",
-                        "Настроить параметры голосования"
-                    ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
+                        ButtonStyle.Success,
                         "menu8",
-                        "Изменить нижнюю иконку"
+                        "Опубликовать голосование"
                     ),
                     new DiscordButtonComponent
                     (
-                        ButtonStyle.Secondary,
+                        ButtonStyle.Danger,
                         "menu9",
-                        "Изменить описание нижней иконки"
-                    ),
+                        "Удалить"
+                    )
                 };
             }
 
