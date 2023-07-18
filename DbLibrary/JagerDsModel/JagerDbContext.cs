@@ -5,7 +5,7 @@ namespace DbLibrary.JagerDsModel
     public class JagerDbContext : DbContext
     {
         public DbSet<Election> Elections { get; set; }
-        public DbSet<Roles> Roles { get; set; }
+        public DbSet<Role> Roles { get; set; }
         public DbSet<RoleSetup> RoleSetups { get; set; }
         public DbSet<Vote> Votes { get; set; }
 

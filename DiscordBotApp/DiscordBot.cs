@@ -32,7 +32,8 @@ namespace DiscordApp
             discord.UseInteractivity(DiscordConfigurator.GetInteractivityConfiguration());
 
             IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
-            serviceCollection.AddSingleton<ElectionSingleton>();
+            serviceCollection.AddTransient<ElectionResponce>();
+            //serviceCollection.AddSingleton<ElectionSingleton>();
             var services = serviceCollection.BuildServiceProvider();
 
             var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
@@ -61,8 +62,13 @@ namespace DiscordApp
             {
                 if (itteraction.Id.StartsWith("em_"))
                 {
-                    if (services.GetService<ElectionSingleton>() is ElectionSingleton election)
-                        election.Responce(itteraction);
+                    //if (services.GetService<ElectionSingleton>() is ElectionSingleton election)
+                    //    election.Responce(itteraction);
+                }
+                else if (itteraction.Id.StartsWith("EL_"))
+                {
+                    if (services.GetService<ElectionResponce>() is ElectionResponce electionResponce)
+                        electionResponce.Responce(itteraction);
                 }
                 else
                 {
