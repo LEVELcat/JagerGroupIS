@@ -34,6 +34,8 @@ namespace DiscordBotApp.Commands
             {
                 var option = await ConstructElectionAsync(ctx);
 
+                if (option.Item1 == null) return;
+
                 DiscordMessageBuilder messageBuilder = option.Item1;
                 messageBuilder.AddComponents(ReturnButtonComponents());
 
@@ -100,7 +102,9 @@ namespace DiscordBotApp.Commands
 
                 Election election = new Election()
                 {
-                    BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList
+                    BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList,
+                    GuildID = ctx.Guild.Id
+                    
                 };
 
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
@@ -480,7 +484,7 @@ namespace DiscordBotApp.Commands
         {
             public async Task Responce(ComponentInteractionCreateEventArgs componentInteraction)
             {
-                componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+                await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
                 using(JagerDbContext dbContext = new JagerDbContext())
                 {
@@ -514,7 +518,7 @@ namespace DiscordBotApp.Commands
                     switch (componentInteraction.Id)
                     {
                         case "EL_APROVE":
-                            if(lastVote == null || lastVote.VoteValue == false)
+                            if(lastVote == null || lastVote.VoteValue == false || lastVote.VoteValue == null)
                             {
                                 dbContext.Votes.Add(new Vote()
                                 {
@@ -523,6 +527,7 @@ namespace DiscordBotApp.Commands
                                     VoteDateTime = DateTime.UtcNow,
                                     VoteValue = true
                                 });
+                                await dbContext.SaveChangesAsync();
                             }
                             else
                             {
@@ -533,10 +538,11 @@ namespace DiscordBotApp.Commands
                                     VoteDateTime = DateTime.UtcNow,
                                     VoteValue = null
                                 });
+                                await dbContext.SaveChangesAsync();
                             }
                             break;
                         case "EL_DENY":
-                            if (lastVote == null || lastVote.VoteValue == true)
+                            if (lastVote == null || lastVote.VoteValue == true || lastVote.VoteValue == null)
                             {
                                 dbContext.Votes.Add(new Vote()
                                 {
@@ -545,6 +551,7 @@ namespace DiscordBotApp.Commands
                                     VoteDateTime = DateTime.UtcNow,
                                     VoteValue = false
                                 });
+                                await dbContext.SaveChangesAsync();
                             }
                             else
                             {
@@ -555,6 +562,7 @@ namespace DiscordBotApp.Commands
                                     VoteDateTime = DateTime.UtcNow,
                                     VoteValue = null
                                 });
+                                await dbContext.SaveChangesAsync();
                             }
                             break;
                         case "EL_UPDATE":
@@ -564,9 +572,61 @@ namespace DiscordBotApp.Commands
                     }
 
 
+                    DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder(componentInteraction.Message);
 
+                    DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
 
+                    byte fieldIndex = 0;
 
+                    var members = (from m in componentInteraction.Guild.Members.Values
+                                   where m.Roles.Any(r => allowedRolesID.Contains(r.Id))
+                                   select new { m.Id , m.DisplayName}).ToList();
+
+                    //IT'S REMOVED ITALICS FONT
+                    for (int i = 0; i < members.Count; i++)
+                        members[i].DisplayName.Replace("_", "\\_");
+
+                    if (election.BitMaskSettings.HasFlag(BitMaskElection.AgreeList))
+                    {
+                        embedBuilder.Fields[fieldIndex].Value = string.Empty;
+
+                        var yesList = (from v in election.Votes.GroupBy(d => d.MemberID)
+                                       let vL = v.Last()
+                                       where vL.VoteValue == true
+                                       join m in members on vL.MemberID equals m.Id
+                                       select new { m.Id, m.DisplayName }).ToArray();
+
+                        foreach (var v in yesList)
+                            members.RemoveAll(m => m.Id == v.Id);
+
+                        embedBuilder.Fields[fieldIndex].Value = string.Join('\n', yesList.Select(n => n.DisplayName).AsEnumerable());
+                        fieldIndex++;
+                    }
+
+                    if (election.BitMaskSettings.HasFlag(BitMaskElection.RejectList))
+                    {
+                        embedBuilder.Fields[fieldIndex].Value = string.Empty;
+
+                        var noList = (from v in election.Votes.GroupBy(d => d.MemberID)
+                                       let vL = v.Last()
+                                       where vL.VoteValue == false
+                                       join m in members on vL.MemberID equals m.Id
+                                       select new { m.Id, m.DisplayName }).ToArray();
+
+                        foreach (var v in noList)
+                            members.RemoveAll(m => m.Id == v.Id);
+
+                        embedBuilder.Fields[fieldIndex].Value = string.Join('\n', noList.Select(n => n.DisplayName).AsEnumerable());
+                        fieldIndex++;
+                    }
+
+                    if (election.BitMaskSettings.HasFlag(BitMaskElection.NotVotedList))
+                    {
+                        embedBuilder.Fields[fieldIndex].Value = string.Join('\n', members.Select(n => n.DisplayName).AsEnumerable());
+                    }
+
+                    messageBuilder.Embed = embedBuilder;
+                    componentInteraction.Message.ModifyAsync(messageBuilder);
 
                     dbContext.DisposeAsync();
                     GC.Collect();
