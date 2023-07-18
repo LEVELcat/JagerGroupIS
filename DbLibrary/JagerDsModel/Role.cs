@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace DbLibrary.JagerDsModel
 {
     [Table("roles")]
-    public class Roles
+    public class Role
     {
         [Key]
         [Column("RolesID")]

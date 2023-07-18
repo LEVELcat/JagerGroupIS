@@ -16,7 +16,7 @@ namespace DbLibrary.JagerDsModel
 
         [Column("RolesID")]
         public ushort RolesID { get; set; }
-        public virtual Roles? Roles { get; set; }
+        public virtual Role? Roles { get; set; }
     }
 
 }

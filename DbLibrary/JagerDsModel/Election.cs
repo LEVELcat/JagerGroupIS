@@ -27,5 +27,9 @@ namespace DbLibrary.JagerDsModel
 
         [Column("SettingBitMask")]
         public BitMaskElection BitMaskSettings { get; set; }
+
+        public virtual ICollection<RoleSetup>? RoleSetups { get; set; }
+
+        public virtual ICollection<Vote>? Votes { get; set; }
     }
 }
