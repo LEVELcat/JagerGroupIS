@@ -16,6 +16,7 @@ using DSharpPlus.Interactivity.Extensions;
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections;
 
 namespace DiscordBotApp.Commands
 {
@@ -599,6 +600,8 @@ namespace DiscordBotApp.Commands
                         foreach (var v in yesList)
                             members.RemoveAll(m => m.Id == v.Id);
 
+
+                        embedBuilder.Fields[fieldIndex].Name = "<:emoji_134:941666424324239430>" + yesList.Length;
                         embedBuilder.Fields[fieldIndex].Value = string.Join('\n', yesList.Select(n => n.DisplayName).AsEnumerable());
                         fieldIndex++;
                     }
@@ -616,12 +619,14 @@ namespace DiscordBotApp.Commands
                         foreach (var v in noList)
                             members.RemoveAll(m => m.Id == v.Id);
 
+                        embedBuilder.Fields[fieldIndex].Name = "<:1_:941666407513473054>" + noList.Length;
                         embedBuilder.Fields[fieldIndex].Value = string.Join('\n', noList.Select(n => n.DisplayName).AsEnumerable());
                         fieldIndex++;
                     }
 
                     if (election.BitMaskSettings.HasFlag(BitMaskElection.NotVotedList))
                     {
+                        embedBuilder.Fields[fieldIndex].Name = "<a:load:1112311359548444713>" + members.Count;
                         embedBuilder.Fields[fieldIndex].Value = string.Join('\n', members.Select(n => n.DisplayName).AsEnumerable());
                     }
 
