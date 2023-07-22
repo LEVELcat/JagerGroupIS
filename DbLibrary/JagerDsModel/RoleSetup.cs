@@ -17,6 +17,9 @@ namespace DbLibrary.JagerDsModel
         [Column("RolesID")]
         public ushort RolesID { get; set; }
         public virtual Role? Roles { get; set; }
+
+        [Column("IsTakingPart")]
+        public bool IsTakingPart { get; set; }
     }
 
 }
