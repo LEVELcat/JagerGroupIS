@@ -1,17 +1,12 @@
 ﻿
-using DiscordBotApp.Commands;
-using DiscordBotApp.HelpFormater;
+using DiscordBotApp.Modules;
 using DSharpPlus;
 using DSharpPlus.AsyncEvents;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using System.Globalization;
-using System.Reflection;
-using static DiscordBotApp.Commands.ElectionModule;
+using Modules = DiscordBotApp.Modules;
 
 namespace DiscordApp
 {
@@ -32,7 +27,7 @@ namespace DiscordApp
             discord.UseInteractivity(DiscordConfigurator.GetInteractivityConfiguration());
 
             IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
-            serviceCollection.AddTransient<ElectionResponce>();
+            serviceCollection.AddTransient<Modules.ElectionModuleClasses.ElectionResponce>();
             //serviceCollection.AddSingleton<ElectionSingleton>();
             var services = serviceCollection.BuildServiceProvider();
 
@@ -60,14 +55,9 @@ namespace DiscordApp
         {
             return async (ctx, itteraction) =>
             {
-                if (itteraction.Id.StartsWith("em_"))
+                if (itteraction.Id.StartsWith("EL_"))
                 {
-                    //if (services.GetService<ElectionSingleton>() is ElectionSingleton election)
-                    //    election.Responce(itteraction);
-                }
-                else if (itteraction.Id.StartsWith("EL_"))
-                {
-                    if (services.GetService<ElectionResponce>() is ElectionResponce electionResponce)
+                    if (services.GetService<Modules.ElectionModuleClasses.ElectionResponce>() is Modules.ElectionModuleClasses.ElectionResponce electionResponce)
                         electionResponce.Responce(itteraction);
                 }
                 else

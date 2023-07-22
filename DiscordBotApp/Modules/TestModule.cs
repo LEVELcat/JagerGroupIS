@@ -3,7 +3,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 
-namespace DiscordBotApp.Commands
+namespace DiscordBotApp.Modules
 {
     [ModuleLifespan(ModuleLifespan.Transient)]
     internal class TestModule : BaseCommandModule
