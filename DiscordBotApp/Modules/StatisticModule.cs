@@ -4,7 +4,7 @@ using DSharpPlus.Entities;
 using DbLibrary.StatisticModel;
 using Microsoft.EntityFrameworkCore;
 
-namespace DiscordBotApp.Commands
+namespace DiscordBotApp.Modules
 {
     [ModuleLifespan(ModuleLifespan.Transient)]
     internal class StatisticModule : BaseCommandModule
