@@ -78,8 +78,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
         }
         private async Task<(DiscordMessageBuilder, Election)> ConstructElectionAsync(CommandContext ctx)
         {
-            Guid guid = new Guid();
-
             ctx.Message.DeleteAsync();
 
             Election election = new Election()

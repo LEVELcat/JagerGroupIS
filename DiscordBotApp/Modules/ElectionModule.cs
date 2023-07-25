@@ -16,7 +16,7 @@ namespace DiscordBotApp.Modules
     [ModuleLifespan(ModuleLifespan.Transient)]
     internal partial class ElectionModule : BaseCommandModule
     {
-        [Command("ev")]
+        [Command("event")]
         public async Task EventCommandInvoke(CommandContext ctx)
         {
             new ElectionFactory().CreateElectionAsync(ctx);
