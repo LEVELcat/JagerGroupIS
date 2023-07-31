@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Drawing;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
 {
@@ -62,10 +63,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                         new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_DELETE", "🗑️")
             };
         }
-
-
-
-
 
         [Flags]
         enum ElectionReadyEnum : byte
@@ -138,8 +135,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                 DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
                                 responseBuilder.WithTitle("Настройки #1");
 
-                                guid = Guid.NewGuid();
-                                responseBuilder.WithCustomId(guid.ToString());
+                                responseBuilder.WithCustomId("menu1");
 
                                 responseBuilder.AddComponents(new TextInputComponent("Название", "name"));
                                 responseBuilder.AddComponents(new TextInputComponent("Дата события", "date", value: DateTime.Now.ToString()));
@@ -151,7 +147,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                                 var input = ctx.Client.GetInteractivity();
 
-                                var txtResponce = await input.WaitForModalAsync(guid.ToString(), TimeSpan.FromMinutes(20));
+                                var txtResponce = await input.WaitForModalAsync("menu1", TimeSpan.FromMinutes(20));
 
                                 if (txtResponce.TimedOut)
                                 {
@@ -199,8 +195,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                             case "menu2":
                                 DiscordInteractionResponseBuilder responseBuilder2 = new DiscordInteractionResponseBuilder();
                                 responseBuilder2.WithTitle("Настройки #2");
-                                guid = Guid.NewGuid();
-                                responseBuilder2.WithCustomId(guid.ToString());
+                                responseBuilder2.WithCustomId("menu2");
 
                                 responseBuilder2.AddComponents(new TextInputComponent("Подпись снизу", "footerText", required: false));
                                 responseBuilder2.AddComponents(new TextInputComponent("URL Иконки возле подписи", "footerIcon", required: false));
@@ -210,7 +205,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                                 var input2 = ctx.Client.GetInteractivity();
 
-                                var txtResponce2 = await input2.WaitForModalAsync(guid.ToString(), TimeSpan.FromMinutes(20));
+                                var txtResponce2 = await input2.WaitForModalAsync("menu2", TimeSpan.FromMinutes(20));
 
                                 if (txtResponce2.TimedOut)
                                 {
@@ -458,6 +453,52 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     )
             };
         }
+
+        class ElectionSettings
+        {
+            public BitMaskElection BitMaskElection;
+
+            public string Title = "Название";
+
+            public string Description = "Описание";
+
+            public string? MainPictureURL;
+
+            public string? TumbnailPictureURL;
+
+            public DiscordColor Color = new DiscordColor("#FFFFFF");
+
+            public string? FooterText;
+
+            public string? FooterUrl;
+
+            public ElectionSettings()
+            {
+
+            }
+
+        }
+
+        private async Task<Election> ConstructElectionAsync(CommandContext ctx, DiscordMessageBuilder messageBuilder)
+        {
+            ctx.Message.DeleteAsync();
+
+            Election election = new Election()
+            {
+                BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList,
+                GuildID = ctx.Guild.Id
+            };
+
+            ElectionSettings electionSettings = new ElectionSettings();
+
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+
+            var foot = embedBuilder.Footer;
+
+            return null;
+        }
+
+
     }
 }
 
