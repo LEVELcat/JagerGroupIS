@@ -64,6 +64,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             };
         }
 
+
         [Flags]
         enum ElectionReadyEnum : byte
         {
@@ -456,46 +457,168 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
         class ElectionSettings
         {
-            public BitMaskElection BitMaskElection;
-
-            public string Title = "Название";
-
-            public string Description = "Описание";
-
-            public string? MainPictureURL;
-
-            public string? TumbnailPictureURL;
-
-            public DiscordColor Color = new DiscordColor("#FFFFFF");
-
-            public string? FooterText;
-
-            public string? FooterUrl;
-
-            public ElectionSettings()
+            public BitMaskElection BitMaskElection
             {
+                get => Election.BitMaskSettings;
+                set
+                {
+                    Election.BitMaskSettings = value;
 
+                    EmbedBuilder.ClearFields();
+
+                    if (BitMaskElection.HasFlag(BitMaskElection.AgreeList))
+                        EmbedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
+
+                    if (BitMaskElection.HasFlag(BitMaskElection.RejectList))
+                        EmbedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
+
+                    if (BitMaskElection.HasFlag(BitMaskElection.NotVotedList))
+                        EmbedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
+                }
             }
 
+            private string title;
+            public string Title 
+            { 
+                get => title;
+                set 
+                {
+                    title = value;
+                    EmbedBuilder.Title = value;
+                }
+            }
+
+            private string description;
+            public string Description
+            {
+                get => description;
+                set
+                {
+                    description = value;
+                    EmbedBuilder.Description = FullDescription;
+                }
+            }
+
+            private DateTime endDate;
+            public DateTime EndDate
+            {
+                get => endDate;
+                set
+                {
+                    endDate = value;
+                    EmbedBuilder.Description = FullDescription;
+                }
+            }
+
+            private string FullDescription 
+            {
+                get => Description + "\n\n" + EndDate.ToString();
+            }
+
+            private string? mainPictureURL;
+            public string? MainPictureURL 
+            { 
+                get => mainPictureURL;
+                set 
+                {
+                    mainPictureURL = value;
+                    EmbedBuilder.ImageUrl = MainPictureURL;
+                } 
+            }
+
+            private string? tumbnailPictureURL;
+            public string? TumbnailPictureURL
+            {
+                get => tumbnailPictureURL;
+                set
+                {
+                    tumbnailPictureURL = value;
+                    EmbedBuilder.Thumbnail.Url = TumbnailPictureURL;
+                }
+            }
+
+            private DiscordColor color;
+            public DiscordColor Color
+            {
+                get => color;
+                set
+                {
+                    color = value;
+                    EmbedBuilder.Color = Color;
+                }
+            }
+
+            private string? footerText;
+            public string? FooterText
+            {
+                get => footerText;
+                set
+                {
+                    footerText = value;
+                    EmbedBuilder.WithFooter(FooterText);
+                }
+            }
+
+            private string? footerUrl;
+            public string? FooterUrl
+            {
+                get => footerUrl;
+                set
+                {
+                    footerUrl = value;
+                    if(EmbedBuilder.Footer != null)
+                        EmbedBuilder.WithFooter(FooterText, FooterUrl);
+                }
+            }
+
+            public Election Election { get; private set; } = new Election();
+
+            public DiscordEmbedBuilder EmbedBuilder { get; private set; } = new DiscordEmbedBuilder();
+
+            private DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+            public DiscordMessageBuilder MessageBuilder 
+            {
+                get
+                {
+                    messageBuilder.Embed = EmbedBuilder;
+                    return messageBuilder;
+                }
+                private set => messageBuilder = value;
+            } 
+
+
+            public ElectionSettings(CommandContext ctx)
+            {
+                Election.GuildID = ctx.Guild.Id;
+
+                SetDefaultSettings();
+            }
+
+            private void SetDefaultSettings()
+            {
+                Title = "Название";
+                Description = "Description";
+                EndDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 20, 00, 00);
+                BitMaskElection = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList;
+                Color = new DiscordColor("#FFFFFF");
+            }
         }
 
         private async Task<Election> ConstructElectionAsync(CommandContext ctx, DiscordMessageBuilder messageBuilder)
         {
             ctx.Message.DeleteAsync();
 
-            Election election = new Election()
-            {
-                BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList,
-                GuildID = ctx.Guild.Id
-            };
+            ElectionSettings electionSettings = new ElectionSettings(ctx);
 
-            ElectionSettings electionSettings = new ElectionSettings();
 
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
 
-            var foot = embedBuilder.Footer;
 
-            return null;
+
+
+
+
+            messageBuilder = electionSettings.MessageBuilder;
+            return electionSettings.Election;
         }
 
 
