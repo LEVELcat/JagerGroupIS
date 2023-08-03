@@ -7,6 +7,7 @@ using DSharpPlus.Interactivity.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Drawing;
+using System.Numerics;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
 {
@@ -571,6 +572,17 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 }
             }
 
+            private DateTime? timeStamp;
+            public DateTime? TimeStamp
+            {
+                get => timeStamp;
+                set
+                {
+                    timeStamp = value;
+                    EmbedBuilder.WithTimestamp(timeStamp);
+                }
+            }
+
             public Election Election { get; private set; } = new Election();
 
             public DiscordEmbedBuilder EmbedBuilder { get; private set; } = new DiscordEmbedBuilder();
@@ -584,7 +596,16 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     return messageBuilder;
                 }
                 private set => messageBuilder = value;
-            } 
+            }
+
+            //TODO: Сделать
+            public bool IsReadyToPublish
+            {
+                get
+                {
+                    return false;
+                }
+            }
 
 
             public ElectionSettings(CommandContext ctx)
@@ -602,6 +623,89 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 BitMaskElection = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList;
                 Color = new DiscordColor("#FFFFFF");
             }
+
+            //TODO: Сделать
+            public static bool TryParse(DiscordMessageBuilder discordMessage, out ElectionSettings electionSettings)
+            {
+                electionSettings = null;
+                return false;
+            }
+
+            public static DiscordMessageBuilder DefaultMenuPanelMessage
+            {
+                get
+                {
+                    var result = new  DiscordMessageBuilder();
+
+                    result.WithContent("Настройки голосования");
+                    result.AddComponents(DefaultButtonMenuRows.AsEnumerable());
+
+                    return result;
+                }
+            }
+
+            private static DiscordActionRowComponent[] DefaultButtonMenuRows
+            {
+                get
+                {
+                    return new DiscordActionRowComponent[]
+                    {
+                        new DiscordActionRowComponent(_firstPart()),
+                        new DiscordActionRowComponent(_secondPart())
+                    };
+
+                    DiscordComponent[] _firstPart() => new DiscordComponent[]
+                    {
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Secondary,
+                        "menu1",
+                        "Настройка #1"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Secondary,
+                        "menu2",
+                        "Настройка #2"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Secondary,
+                        "menu3",
+                        "Настроить роли участвующие в событии"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Secondary,
+                        "menu4",
+                        "Настроить списки участников на событие"
+                    ),
+
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Secondary,
+                        "menu5",
+                        "Выбрать канал для публикации"
+                    ),
+
+            };
+                    DiscordComponent[] _secondPart() => new DiscordComponent[]
+                    {
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Success,
+                        "menu8",
+                        "Опубликовать голосование"
+                    ),
+                    new DiscordButtonComponent
+                    (
+                        ButtonStyle.Danger,
+                        "menu9",
+                        "Удалить"
+                    )
+                    };
+                }
+            }
         }
 
         private async Task<Election> ConstructElectionAsync(CommandContext ctx, DiscordMessageBuilder messageBuilder)
@@ -609,16 +713,72 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             ctx.Message.DeleteAsync();
 
             ElectionSettings electionSettings = new ElectionSettings(ctx);
-
-
-
-
-
-
-
-
             messageBuilder = electionSettings.MessageBuilder;
-            return electionSettings.Election;
+
+            var viewMessage = await ctx.Channel.SendMessageAsync(messageBuilder);
+            var menuMessage = await ctx.Channel.SendMessageAsync(ElectionSettings.DefaultMenuPanelMessage);
+
+            bool isExit = false;
+
+
+            while (true)
+            {
+                viewMessage.ModifyAsync(messageBuilder);
+
+                var respond = await menuMessage.WaitForButtonAsync(TimeSpan.FromMinutes(10));
+
+                if (respond.TimedOut == true)
+                    isExit = true;
+                else
+                {
+                    try
+                    {
+                        switch (respond.Result.Id)
+                        {
+                            case "menu1":
+                                break;
+                            case "menu2":
+                                break;
+                            case "menu3":
+                                break;
+                            case "menu4":
+                                break;
+                            case "menu5":
+                                break;
+                            case "menu8":
+                                break;
+                            case "menu9":
+                                break;
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        DiscordBot.Client.Logger.LogError(ex.Message);
+                        DiscordBot.Client.Logger.LogError(ex.ToString());
+                    }
+                }
+
+
+
+
+
+                if (isExit == true)
+                    break;
+            }
+
+            if(isExit == true)
+            {
+                viewMessage.DeleteAsync();
+                menuMessage.DeleteAsync();
+                menuMessage = null;
+                return null;
+            }
+            else
+            {
+                messageBuilder = electionSettings.MessageBuilder;
+                return electionSettings.Election;
+            }
         }
 
 
