@@ -7,6 +7,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.Logging;
+using static System.Collections.Specialized.BitVector32;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
 {
@@ -67,397 +68,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             //            //new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_EDIT", "Редактировать событие"),
             //            new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_DELETE", "🗑️")
             //};
-        }
-
-
-        [Flags]
-        enum ElectionReadyEnum : byte
-        {
-            None = 0,
-            Name = 1,
-            EndDate = 2,
-            RoleSelect = 4,
-            ChanelSelect = 8,
-        }
-        private async Task<(DiscordMessageBuilder, Election)> ConstructElectionAsync(CommandContext ctx)
-        {
-            ctx.Message.DeleteAsync();
-
-            Election election = new Election()
-            {
-                BitMaskSettings = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList,
-                GuildID = ctx.Guild.Id
-
-            };
-
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
-
-            //embedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
-            //embedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
-            //embedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
-
-            embedBuilder.Title = "Название";
-            //embedBuilder.Timestamp = DateTime.Now;
-            //embedBuilder.WithFooter("Тут какой то отступ c иконкой", "https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
-            embedBuilder.WithDescription("Описание");
-            //mbedBuilder.WithThumbnail("https://media.istockphoto.com/vectors/vector-icon-add-user-add-person-or-add-friend-on-blue-background-flat-vector-id1050964578?k=20&m=1050964578&s=612x612&w=0&h=tK0SFWQVYJdACEGZRRbrKsPw7JkXghBRn_AzBDHcT84=");
-            //embedBuilder.WithImageUrl("https://w.forfun.com/fetch/42/429f04f158ff611068a6eba8af8fe776.jpeg?w=1470&r=0.5625");
-            embedBuilder.WithColor(new DiscordColor("#000000"));
-
-
-            DiscordMessageBuilder viewMessageBuilder = new DiscordMessageBuilder();
-            viewMessageBuilder.WithEmbed(embedBuilder);
-
-            DiscordMessageBuilder menuMessageBuilder = new DiscordMessageBuilder();
-            menuMessageBuilder.WithContent("Тут менюшка");
-            menuMessageBuilder.AddComponents(GetMenuButtonRows().AsEnumerable());
-
-            var viewMessage = await ctx.Channel.SendMessageAsync(viewMessageBuilder);
-            var menuMessage = await ctx.Channel.SendMessageAsync(menuMessageBuilder);
-
-            DiscordChannel channel = viewMessage.Channel;
-
-            bool isExit = false;
-            ElectionReadyEnum electionReady = ElectionReadyEnum.None;
-
-            while (true)
-            {
-                viewMessage.ModifyAsync(viewMessageBuilder);
-
-                var respond = await menuMessage.WaitForButtonAsync(TimeSpan.FromMinutes(10));
-
-                if (respond.TimedOut)
-                {
-                    isExit = true;
-                }
-                else
-                {
-                    try
-                    {
-
-                        switch (respond.Result.Id)
-                        {
-                            case "menu1":
-                                DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
-                                responseBuilder.WithTitle("Настройки #1");
-
-                                responseBuilder.WithCustomId("menu1");
-
-                                responseBuilder.AddComponents(new TextInputComponent("Название", "name"));
-                                responseBuilder.AddComponents(new TextInputComponent("Дата события", "date", value: DateTime.Now.ToString()));
-                                responseBuilder.AddComponents(new TextInputComponent("Описание события", "desc", style: TextInputStyle.Paragraph));
-                                responseBuilder.AddComponents(new TextInputComponent("URL большой картинки снизу", "image", required: false));
-                                responseBuilder.AddComponents(new TextInputComponent("URL картинки справа", "thumb", required: false));
-
-                                respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.Modal, responseBuilder);
-
-                                var input = ctx.Client.GetInteractivity();
-
-                                var txtResponce = await input.WaitForModalAsync("menu1", TimeSpan.FromMinutes(20));
-
-                                if (txtResponce.TimedOut)
-                                {
-                                    isExit = true;
-                                }
-                                else
-                                {
-                                    txtResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                    var values = txtResponce.Result.Values;
-
-                                    if (values["name"] != string.Empty)
-                                    {
-                                        embedBuilder.Title = values["name"];
-                                        electionReady |= ElectionReadyEnum.Name;
-                                    }
-
-
-                                    if (values["desc"] != string.Empty)
-                                        embedBuilder.Description = values["desc"];
-
-                                    if (values["date"] != string.Empty)
-                                    {
-                                        election.StartTime = DateTime.Now;
-                                        if (DateTime.TryParse(values["date"], out DateTime result))
-                                        {
-                                            election.EndTime = result;
-
-                                            embedBuilder.Description += "\n" + "Начало : " + Formatter.Timestamp(result, TimestampFormat.LongDateTime) + " " +
-                                                                        " " + Formatter.Timestamp(result).ToString();
-
-                                            electionReady |= ElectionReadyEnum.EndDate;
-                                        }
-                                    }
-
-                                    if (values["image"] != string.Empty)
-                                        embedBuilder.ImageUrl = values["image"];
-
-                                    if (values["thumb"] != string.Empty)
-                                        embedBuilder.WithThumbnail(values["thumb"]);
-
-                                    viewMessageBuilder.Embed = embedBuilder;
-                                }
-                                break;
-                            case "menu2":
-                                DiscordInteractionResponseBuilder responseBuilder2 = new DiscordInteractionResponseBuilder();
-                                responseBuilder2.WithTitle("Настройки #2");
-                                responseBuilder2.WithCustomId("menu2");
-
-                                responseBuilder2.AddComponents(new TextInputComponent("Подпись снизу", "footerText", required: false));
-                                responseBuilder2.AddComponents(new TextInputComponent("URL Иконки возле подписи", "footerIcon", required: false));
-                                responseBuilder2.AddComponents(new TextInputComponent("Цвета слева", "color", value: "#000000", required: false));
-
-                                respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.Modal, responseBuilder2);
-
-                                var input2 = ctx.Client.GetInteractivity();
-
-                                var txtResponce2 = await input2.WaitForModalAsync("menu2", TimeSpan.FromMinutes(20));
-
-                                if (txtResponce2.TimedOut)
-                                {
-                                    isExit = true;
-                                }
-                                else
-                                {
-                                    txtResponce2.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                    var values = txtResponce2.Result.Values;
-
-                                    if (values["footerText"] != string.Empty && values["footerIcon"] != string.Empty)
-                                        embedBuilder.WithFooter(values["footerText"], values["footerIcon"]);
-                                    else if (values["footerText"] != string.Empty)
-                                        embedBuilder.WithFooter(text: values["footerText"]);
-                                    //NOT WORKING WITHOUT FOOTER_TEXT
-                                    //else if (values["footerIcon"] != string.Empty)
-                                    //    embedBuilder.WithFooter(iconUrl: values["footerIcon"]);
-
-                                    if (values["color"] != string.Empty)
-                                        embedBuilder.WithColor(new DiscordColor(values["color"]));
-
-                                    viewMessageBuilder.Embed = embedBuilder;
-                                }
-                                break;
-                            case "menu3":
-
-                                respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-                                DiscordMessageBuilder roleSelectMessageBuilder = new DiscordMessageBuilder();
-                                roleSelectMessageBuilder.WithContent("Выберите роли участвующие в событии");
-                                roleSelectMessageBuilder.AddComponents(new DiscordRoleSelectComponent("roles", "выберите роль", maxOptions: 10));
-
-                                var roleSelectMessage = await ctx.Channel.SendMessageAsync(roleSelectMessageBuilder);
-
-                                var roleSelectResponce = await roleSelectMessage.WaitForSelectAsync("roles", TimeSpan.FromMinutes(5));
-
-                                if (roleSelectResponce.TimedOut)
-                                {
-                                    isExit = true;
-                                }
-                                else
-                                {
-                                    roleSelectResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                    if (roleSelectResponce.Result.Values.Length > 0)
-                                        electionReady |= ElectionReadyEnum.RoleSelect;
-
-                                    if (election.RoleSetups == null)
-                                        election.RoleSetups = new List<RoleSetup>();
-
-                                    election.RoleSetups.Clear();
-
-                                    string newContent = string.Empty;
-
-                                    foreach (var id_str in roleSelectResponce.Result.Values)
-                                    {
-                                        election.RoleSetups.Add(
-                                            new RoleSetup()
-                                            {
-                                                Roles = new Role()
-                                                {
-                                                    GuildID = ctx.Guild.Id,
-                                                    RoleDiscordID = ulong.Parse(id_str)
-                                                }
-                                            });
-                                        newContent += ctx.Guild.Roles[ulong.Parse(id_str)].Mention;
-                                    }
-                                    viewMessageBuilder.Content = newContent;
-                                }
-                                roleSelectMessage.DeleteAsync();
-
-                                break;
-                            case "menu4":
-
-                                respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                DiscordMessageBuilder listElectionMessageBuilder = new DiscordMessageBuilder();
-                                listElectionMessageBuilder.WithContent("Выберите нужные настройки");
-
-                                var opions = new DiscordSelectComponentOption[]
-                                {
-                                    new DiscordSelectComponentOption("Список согласных", ((ulong)BitMaskElection.AgreeList).ToString()),
-                                    new DiscordSelectComponentOption("Список отказавшихся", ((ulong)BitMaskElection.RejectList).ToString()),
-                                    new DiscordSelectComponentOption("Список воздержавшихся", ((ulong)BitMaskElection.NotVotedList).ToString()),
-                                    new DiscordSelectComponentOption("Уведомление для согласившихся", ((ulong)BitMaskElection.NotificationForAgree).ToString()),
-                                    new DiscordSelectComponentOption("Уведомление для воздежавшихся", ((ulong)BitMaskElection.NotificationForNotVoted).ToString()),
-                                };
-                                listElectionMessageBuilder.AddComponents(new DiscordSelectComponent("listElection", null, opions, maxOptions: 5));
-
-                                var listElectionMessage = await ctx.Channel.SendMessageAsync(listElectionMessageBuilder);
-
-                                var listElectionResponce = await listElectionMessage.WaitForSelectAsync("listElection", TimeSpan.FromMinutes(5));
-
-                                if (listElectionResponce.TimedOut)
-                                {
-                                    isExit = true;
-                                }
-                                else
-                                {
-                                    listElectionResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                    BitMaskElection result = BitMaskElection.None;
-
-                                    foreach (var select in listElectionResponce.Result.Values)
-                                        result |= (BitMaskElection)ulong.Parse(select);
-
-                                    election.BitMaskSettings = result;
-
-                                    embedBuilder.ClearFields();
-
-                                    if (result.HasFlag(BitMaskElection.AgreeList))
-                                        embedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
-
-                                    if (result.HasFlag(BitMaskElection.RejectList))
-                                        embedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
-
-                                    if (result.HasFlag(BitMaskElection.NotVotedList))
-                                        embedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
-
-                                    viewMessageBuilder.Embed = embedBuilder;
-
-                                    electionReady |= ElectionReadyEnum.RoleSelect;
-                                }
-                                listElectionMessage.DeleteAsync();
-                                break;
-                            case "menu5":
-
-                                respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                DiscordMessageBuilder chanelSelectMessageBuilder = new DiscordMessageBuilder();
-                                chanelSelectMessageBuilder.WithContent("Выберите категорию, в которой будет опубликовано событие");
-                                chanelSelectMessageBuilder.AddComponents(new DiscordChannelSelectComponent("chanels", "выберите канал",
-                                                                         new ChannelType[] { ChannelType.Category }));
-
-                                var chanelSelectMessage = await ctx.Channel.SendMessageAsync(chanelSelectMessageBuilder);
-
-                                var chanelSelectResponce = await chanelSelectMessage.WaitForSelectAsync("chanels", TimeSpan.FromMinutes(5));
-
-                                if (chanelSelectResponce.TimedOut)
-                                {
-                                    isExit = true;
-                                }
-                                else
-                                {
-                                    chanelSelectResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                                    election.ChanelID = ulong.Parse(chanelSelectResponce.Result.Values[0]);
-
-                                    electionReady |= ElectionReadyEnum.ChanelSelect;
-                                }
-                                chanelSelectMessage.DeleteAsync();
-                                break;
-                            case "menu8":
-
-                                respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-
-                                if (electionReady == (ElectionReadyEnum.Name | ElectionReadyEnum.EndDate | ElectionReadyEnum.RoleSelect | ElectionReadyEnum.ChanelSelect))
-                                {
-                                    for (int i = 0; i < embedBuilder.Fields.Count; i++)
-                                        embedBuilder.Fields[i].Value = string.Empty;
-
-                                    viewMessage.DeleteAsync();
-                                    menuMessage.DeleteAsync();
-                                    return (viewMessageBuilder, election);
-                                }
-                                else
-                                {
-
-                                }
-
-                                break;
-                            case "menu9":
-                                isExit = true;
-                                break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        DiscordBot.Client.Logger.LogError(ex.Message);
-                        DiscordBot.Client.Logger.LogError(ex.ToString());
-                    }
-                }
-                if (isExit == true)
-                {
-                    viewMessage.DeleteAsync();
-                    menuMessage.DeleteAsync();
-                    return (null, null);
-                }
-            }
-
-            DiscordActionRowComponent[] GetMenuButtonRows() => new DiscordActionRowComponent[]
-            {
-                    new DiscordActionRowComponent(_firstPart()),
-                    new DiscordActionRowComponent(_secondPart()),
-            };
-            DiscordComponent[] _firstPart() => new DiscordComponent[]
-            {
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu1",
-                        "Настройка #1"
-                    ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu2",
-                        "Настройка #2"
-                    ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu3",
-                        "Настроить роли участвующие в событии"
-                    ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu4",
-                        "Настроить списки участников на событие"
-                    ),
-
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Secondary,
-                        "menu5",
-                        "Выбрать канал для публикации"
-                    ),
-
-            };
-            DiscordComponent[] _secondPart() => new DiscordComponent[]
-            {
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Success,
-                        "menu8",
-                        "Опубликовать голосование"
-                    ),
-                    new DiscordButtonComponent
-                    (
-                        ButtonStyle.Danger,
-                        "menu9",
-                        "Удалить"
-                    )
-            };
         }
 
         class ElectionSettings
@@ -527,8 +137,15 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 get => mainPictureURL;
                 set
                 {
-                    mainPictureURL = value;
-                    EmbedBuilder.ImageUrl = MainPictureURL;
+                    try
+                    {
+                        EmbedBuilder.ImageUrl = value;
+                        mainPictureURL = value;
+                    }
+                    catch
+                    {
+                        EmbedBuilder.ImageUrl = mainPictureURL;
+                    }
                 }
             }
 
@@ -538,8 +155,16 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 get => thumbnailPictureURL;
                 set
                 {
-                    thumbnailPictureURL = value;
-                    EmbedBuilder.Thumbnail.Url = ThumbnailPictureURL;
+                    try
+                    {
+                        EmbedBuilder.WithThumbnail(value);
+                        thumbnailPictureURL = value;
+
+                    }
+                    catch
+                    {
+                        EmbedBuilder.Thumbnail.Url = thumbnailPictureURL;
+                    }
                 }
             }
 
@@ -571,9 +196,20 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 get => footerUrl;
                 set
                 {
-                    footerUrl = value;
-                    if (EmbedBuilder.Footer != null)
-                        EmbedBuilder.WithFooter(FooterText, FooterUrl);
+                    try
+                    {
+                        if (EmbedBuilder.Footer != null)
+                        {
+                            EmbedBuilder.WithFooter(FooterText, value);
+                            footerUrl = value;
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+
+
                 }
             }
 
@@ -674,6 +310,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             {
                 viewMessage?.ModifyAsync(MessageBuilder);
             }
+
+            private void UpdateMessageContent()
+            {
+                MessageBuilder.Content =String.Join('\n' , Election.RoleSetups.Where(x => x.IsTakingPart == true).Select(x => $"<@&{x.Roles?.RoleDiscordID}>"));
+            } 
 
             public async void ShowViewMessage(CommandContext ctx)
             {
@@ -811,11 +452,76 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
             public async void ShowRoleSelectSettingMessage(CommandContext ctx, InteractivityResult<ComponentInteractionCreateEventArgs> eventArgs)
             {
-                //eventArgs.Result.Interaction.CreateResponseAsync(InteractionResponseType.);
+                eventArgs.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
-                DiscordInteractionResponseBuilder _GetBuilder()
+                RoleSelectMessage = await ctx.Channel.SendMessageAsync(_GetBuilder("Выберите роли участвующие в событии", "Участвуют", "includeList"));
+
+                var responce = await RoleSelectMessage.WaitForSelectAsync("includeList", TimeSpan.FromMinutes(5));
+
+                if (responce.TimedOut)
+                    RoleSelectMessage = null;
+                else
                 {
-                    DiscordInteractionResponseBuilder builder = new DiscordInteractionResponseBuilder();
+                    var includedValues = responce.Result.Values;
+
+                    responce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                    RoleSelectMessage = await ctx.Channel.SendMessageAsync(_GetBuilder("Выберите роли исключаемые из голосования", "Исключенные", "excludeList"));
+
+                    responce = await RoleSelectMessage.WaitForSelectAsync("excludeList", TimeSpan.FromMinutes(5));
+
+                    if (responce.TimedOut)
+                        RoleSelectMessage = null;
+                    else
+                    {
+                        var excludedValues = responce.Result.Values;
+
+                        Election.RoleSetups = new List<RoleSetup>();
+
+                        foreach(var include_Str in includedValues)
+                        {
+                            Election.RoleSetups.Add(
+                                new RoleSetup()
+                                {
+                                    Roles = new Role()
+                                    {
+                                        GuildID = ctx.Guild.Id,
+                                        RoleDiscordID = ulong.Parse(include_Str)
+                                    },
+                                    IsTakingPart = true,
+                                });
+                        }
+
+                        foreach(var excluded_Str in excludedValues)
+                        {
+                            Election.RoleSetups.Add(
+                                new RoleSetup()
+                                {
+                                    Roles = new Role()
+                                    {
+                                        GuildID = ctx.Guild.Id,
+                                        RoleDiscordID = ulong.Parse(excluded_Str)
+                                    },
+                                    IsTakingPart = false,
+                                });
+                        }
+
+                        UpdateMessageContent();
+
+                        responce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                        RoleSelectMessage = null;
+
+                        EditViewMessage();
+                    }
+                }
+
+
+                DiscordMessageBuilder _GetBuilder(string Message, string PlaceHolder, string Id)
+                {
+                    DiscordMessageBuilder builder = new DiscordMessageBuilder();
+                    builder.WithContent(Message);
+                    builder.AddComponents(new DiscordRoleSelectComponent(Id, Message, maxOptions: 5));
 
                     return builder;
                 }
@@ -823,12 +529,80 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
             public async void ShowElectionListSettingMessage(CommandContext ctx, InteractivityResult<ComponentInteractionCreateEventArgs> eventArgs)
             {
+                eventArgs.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
+                ElectionListMessage = await ctx.Channel.SendMessageAsync(_GetBuilder());
+
+                var responce = await RoleSelectMessage.WaitForSelectAsync("listElection", TimeSpan.FromMinutes(5));
+
+                if (responce.TimedOut)
+                    ElectionListMessage = null;
+                else
+                {
+                    responce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                    BitMaskElection = (BitMaskElection)(responce.Result.Values.Select(x => Convert.ToInt64(x))
+                                                                              .Sum());
+
+                    EditViewMessage();
+                }
+
+                ElectionListMessage = null;
+
+                DiscordMessageBuilder _GetBuilder()
+                {
+                    DiscordMessageBuilder builder = new DiscordMessageBuilder();
+                    builder.WithContent("Выберите нужные настройки");
+
+                    var options = new DiscordSelectComponentOption[]
+                    {
+                        new DiscordSelectComponentOption("Список согласных", ((ulong)BitMaskElection.AgreeList).ToString(), 
+                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.AgreeList) ? true : false),
+                        new DiscordSelectComponentOption("Список отказавшихся", ((ulong)BitMaskElection.RejectList).ToString(),
+                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.RejectList) ? true : false),
+                        new DiscordSelectComponentOption("Список воздержавшихся", ((ulong)BitMaskElection.NotVotedList).ToString(),
+                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.NotVotedList) ? true : false),
+                        new DiscordSelectComponentOption("Уведомление для согласившихся", ((ulong)BitMaskElection.NotificationForAgree).ToString(),
+                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.NotificationForAgree) ? true : false),
+                        new DiscordSelectComponentOption("Уведомление для воздежавшихся", ((ulong)BitMaskElection.NotificationForNotVoted).ToString(), 
+                                                         isDefault : BitMaskElection.HasFlag(BitMaskElection.NotificationForNotVoted) ? true : false),
+                    };
+                    builder.AddComponents(new DiscordSelectComponent("listElection", null, options, maxOptions: options.Length));
+
+                    return builder;
+                }
             }
 
             public async void ShowChanelSelectSettingMessage(CommandContext ctx, InteractivityResult<ComponentInteractionCreateEventArgs> eventArgs)
             {
+                eventArgs.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
+                ChanelSelectMessage = await ctx.Channel.SendMessageAsync(_GetBuilder());
+
+                var responce = await ChanelSelectMessage.WaitForSelectAsync("chanels", TimeSpan.FromMinutes(5));
+
+                if (responce.TimedOut)
+                    ChanelSelectMessage = null;
+                else
+                {
+                    responce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                    Election.ChanelID = ulong.Parse(responce.Result.Values[0]);
+                }
+
+                ChanelSelectMessage = null;
+
+                EditViewMessage();
+
+                DiscordMessageBuilder _GetBuilder()
+                {
+                    DiscordMessageBuilder builder = new DiscordMessageBuilder();
+                    builder.WithContent("Выберите категорию, в которой будет опубликовано событие");
+                    builder.AddComponents(new DiscordChannelSelectComponent("chanels", "выберите канал",
+                                          new ChannelType[] { ChannelType.Category }));
+
+                    return builder;
+                }
             }
 
             private async void CreateErrorResponceAsync(InteractivityResult<ModalSubmitEventArgs> txtResponce, string errorString)
@@ -955,10 +729,13 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                             electionSettings.ShowOtherSettingInteraction(ctx, respond);
                             break;
                         case "menu3":
+                            electionSettings.ShowRoleSelectSettingMessage(ctx, respond);
                             break;
                         case "menu4":
+                            electionSettings.ShowElectionListSettingMessage(ctx, respond);
                             break;
                         case "menu5":
+                            electionSettings.ShowChanelSelectSettingMessage(ctx, respond);
                             break;
                         case "menu8":
                             isFinished = true;
