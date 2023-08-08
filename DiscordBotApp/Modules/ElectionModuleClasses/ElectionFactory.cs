@@ -6,7 +6,10 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Diagnostics.Tracing;
 using static System.Collections.Specialized.BitVector32;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
@@ -16,58 +19,70 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
     {
         public async Task CreateElectionAsync(CommandContext ctx)
         {
-            DiscordMessageBuilder messageBuilder = null;
+            var factoryResult = await ConstructElectionAsync(ctx);
 
-            var election = await ConstructElectionAsync(ctx, messageBuilder);
+            if (factoryResult.Item1 == null || factoryResult.Item2 == null)
+                return;
+
+            var election = factoryResult.Item1;
+            var messageBuilder = factoryResult.Item2;
+            messageBuilder.AddComponents(ReturnButtonComponents());
+
+            messageBuilder.Content = string.Empty;
+
+            var RolesMention = ctx.Guild.Roles.Values.Where(x => election.RoleSetups.Where(r => r.IsTakingPart == true)
+                                                                                    .Select(r => r.Roles.RoleDiscordID)
+                                                                                    .Contains(x.Id))
+                                                     .Select(x => x.Mention)
+                                                     .ToArray();
 
 
-            //var option = await ConstructElectionAsync(ctx);
+            using (JagerDbContext dbContext = new JagerDbContext())
+            {
+                foreach (var roleSetup in election.RoleSetups)
+                {
+                    roleSetup.Roles = await FixRolesAsync(roleSetup.Roles);
+                }
 
-            //if (option.Item1 == null) return;
+                var chanel = await ctx.Guild.CreateChannelAsync(messageBuilder.Embed.Title, ChannelType.Text, ctx.Guild.Channels[election.ChanelID]);
 
-            //DiscordMessageBuilder messageBuilder = option.Item1;
-            //messageBuilder.AddComponents(ReturnButtonComponents());
+                var electionMessage = await chanel.SendMessageAsync(messageBuilder);
 
-            //Election election = option.Item2;
+                election.ChanelID = chanel.Id;
+                election.MessageID = electionMessage.Id;
 
-            //using (JagerDbContext dbContext = new JagerDbContext())
-            //{
-            //    foreach (var roleSetup in election.RoleSetups)
-            //    {
-            //        roleSetup.Roles = await FixRolesAsync(roleSetup.Roles);
-            //    }
+                dbContext.Elections.Add(election);
 
-            //    var chanel = await ctx.Guild.CreateChannelAsync(messageBuilder.Embed.Title, ChannelType.Text, ctx.Guild.Channels[election.ChanelID]);
+                await dbContext.SaveChangesAsync();
+                dbContext.DisposeAsync();
 
-            //    var electionMessage = await chanel.SendMessageAsync(messageBuilder);
 
-            //    election.ChanelID = chanel.Id;
-            //    election.MessageID = electionMessage.Id;
+                foreach(var mention in RolesMention)
+                {
+                    chanel.SendMessageAsync(mention);
+                }
 
-            //    dbContext.Elections.Add(election);
-            //    await dbContext.SaveChangesAsync();
+                async Task<Role> FixRolesAsync(Role roles)
+                {
+                    Role? result = await dbContext.Roles.FirstOrDefaultAsync(r =>
+                                                         r.GuildID == roles.GuildID && r.RoleDiscordID == roles.RoleDiscordID);
+                    if (result == null)
+                    {
+                        result = roles;
+                        dbContext.Roles.Add(roles);
+                    }
+                    return result;
+                }
+            }
 
-            //    async Task<Role> FixRolesAsync(Role roles)
-            //    {
-            //        Role? result = await dbContext.Roles.FirstOrDefaultAsync(r =>
-            //                                             r.GuildID == roles.GuildID && r.RoleDiscordID == roles.RoleDiscordID);
-            //        if (result == null)
-            //        {
-            //            result = roles;
-            //            dbContext.Roles.Add(roles);
-            //        }
-            //        return result;
-            //    }
-            //}
-
-            //DiscordComponent[] ReturnButtonComponents() => new DiscordComponent[]
-            //{
-            //            new DiscordButtonComponent(ButtonStyle.Success, $"EL_APROVE", string.Empty, emoji: new DiscordComponentEmoji(941666424324239430)),
-            //            new DiscordButtonComponent(ButtonStyle.Danger, $"EL_DENY", string.Empty, emoji: new DiscordComponentEmoji(941666407513473054)),
-            //            new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_UPDATE", "Обновить список"),
-            //            //new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_EDIT", "Редактировать событие"),
-            //            new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_DELETE", "🗑️")
-            //};
+            DiscordComponent[] ReturnButtonComponents() => new DiscordComponent[]
+            {
+                        new DiscordButtonComponent(ButtonStyle.Success, $"EL_APROVE", string.Empty, emoji: new DiscordComponentEmoji(941666424324239430)),
+                        new DiscordButtonComponent(ButtonStyle.Danger, $"EL_DENY", string.Empty, emoji: new DiscordComponentEmoji(941666407513473054)),
+                        new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_UPDATE", "Обновить список"),
+                        //new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_EDIT", "Редактировать событие"),
+                        new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_DELETE", "🗑️")
+            };
         }
 
         class ElectionSettings
@@ -128,7 +143,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
             private string FullDescription
             {
-                get => Description + "\n\n" + EndDate.ToString();
+                get => $"{Description}\n\nНачало: {Formatter.Timestamp(EndDate, TimestampFormat.LongDateTime)} {Formatter.Timestamp(EndDate)}";
             }
 
             private string? mainPictureURL;
@@ -311,9 +326,9 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 viewMessage?.ModifyAsync(MessageBuilder);
             }
 
-            private void UpdateMessageContent()
+            private void UpdateMessageContent(CommandContext ctx)
             {
-                MessageBuilder.Content =String.Join('\n' , Election.RoleSetups.Where(x => x.IsTakingPart == true).Select(x => $"<@&{x.Roles?.RoleDiscordID}>"));
+                MessageBuilder.Content = String.Join('\n' , Election.RoleSetups.Where(x => x.IsTakingPart == true).Select(x => $"<@&{x.Roles?.RoleDiscordID}>"));
             } 
 
             public async void ShowViewMessage(CommandContext ctx)
@@ -328,9 +343,12 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 }
             }
 
-            public async void DeleteViewMessageAsync()
+            public async void DeleteConstructorAsync()
             {
                 viewMessage?.DeleteAsync();
+                RoleSelectMessage?.DeleteAsync();
+                ChanelSelectMessage?.DeleteAsync();
+                ElectionListMessage?.DeleteAsync();
             }
 
             public async void ShowMainSettingInteraction(CommandContext ctx, InteractivityResult<ComponentInteractionCreateEventArgs> eventArgs)
@@ -411,7 +429,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 if (values["footerIcon"] != string.Empty)
                     this.FooterUrl = values["footerIcon"];
-
 
                 try
                 {
@@ -506,7 +523,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                 });
                         }
 
-                        UpdateMessageContent();
+                        UpdateMessageContent(ctx);
 
                         responce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
@@ -699,9 +716,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             }
         }
 
-        private async Task<Election> ConstructElectionAsync(CommandContext ctx, DiscordMessageBuilder outMessageBuilder)
+        private async Task<(Election, DiscordMessageBuilder)> ConstructElectionAsync(CommandContext ctx)
         {
-
             ctx.Message.DeleteAsync();
 
             ElectionSettings electionSettings = new ElectionSettings(ctx);
@@ -739,9 +755,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                             break;
                         case "menu8":
                             isFinished = true;
+                            respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
                             break;
                         case "menu9":
                             isExit = true;
+                            respond.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
                             break;
 
                     }
@@ -750,17 +768,13 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     break;
             }
 
+            electionSettings.DeleteConstructorAsync();
+            menuMessage.DeleteAsync();
+
             if (isExit == true)
-            {
-                electionSettings.DeleteViewMessageAsync();
-                menuMessage.DeleteAsync();
-                return null;
-            }
+                return new (null, null);
             else
-            {
-                outMessageBuilder = electionSettings.MessageBuilder;
-                return electionSettings.Election;
-            }
+                return new (electionSettings.Election, electionSettings.MessageBuilder);
         }
     }
 }
