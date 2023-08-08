@@ -30,12 +30,13 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
             messageBuilder.Content = string.Empty;
 
-            var RolesMention = ctx.Guild.Roles.Values.Where(x => election.RoleSetups.Where(r => r.IsTakingPart == true)
+            var Roles = ctx.Guild.Roles.Values.Where(x => election.RoleSetups.Where(r => r.IsTakingPart == true)
                                                                                     .Select(r => r.Roles.RoleDiscordID)
                                                                                     .Contains(x.Id))
-                                                     .Select(x => x.Mention)
                                                      .ToArray();
 
+            messageBuilder.Content = String.Join('\n', Roles.Select(r => r.Mention));
+            messageBuilder.WithAllowedMentions(Roles.Select(x => new RoleMention(x) as IMention));
 
             using (JagerDbContext dbContext = new JagerDbContext())
             {
@@ -55,12 +56,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 await dbContext.SaveChangesAsync();
                 dbContext.DisposeAsync();
-
-
-                foreach(var mention in RolesMention)
-                {
-                    chanel.SendMessageAsync(mention);
-                }
 
                 async Task<Role> FixRolesAsync(Role roles)
                 {
