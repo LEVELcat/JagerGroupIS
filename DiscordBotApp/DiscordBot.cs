@@ -1,5 +1,6 @@
 ﻿
 using DiscordBotApp.Modules;
+using DiscordBotApp.Modules.ElectionModuleClasses;
 using DSharpPlus;
 using DSharpPlus.AsyncEvents;
 using DSharpPlus.CommandsNext;
