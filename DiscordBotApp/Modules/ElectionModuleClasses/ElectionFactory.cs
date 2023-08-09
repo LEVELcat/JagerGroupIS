@@ -268,10 +268,10 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 get => electionListMessage;
                 set
                 {
-                    if (roleSelectMessage != null)
-                        roleSelectMessage.DeleteAsync();
+                    if (electionListMessage != null)
+                        electionListMessage.DeleteAsync();
 
-                    roleSelectMessage = value;
+                    electionListMessage = value;
                 }
             }
 
@@ -312,7 +312,9 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 Title = "Название";
                 Description = "Описание";
                 EndDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 20, 00, 00);
-                BitMaskElection = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList;
+                BitMaskElection = BitMaskElection.AgreeList | BitMaskElection.RejectList | BitMaskElection.NotVotedList |
+                                  BitMaskElection.NotificationBefore_15Minutes | BitMaskElection.NotificationBefore_24Hour | BitMaskElection.NotificationBefore_48Hour |
+                                  BitMaskElection.NotificationBefore_1Week;
                 Color = new DiscordColor("#FFFFFF");
             }
 
@@ -543,9 +545,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             {
                 eventArgs.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
+                BitMaskElection oldBitMask = BitMaskElection;
+
                 ElectionListMessage = await ctx.Channel.SendMessageAsync(_GetBuilder());
 
-                var responce = await RoleSelectMessage.WaitForSelectAsync("listElection", TimeSpan.FromMinutes(5));
+                var responce = await ElectionListMessage.WaitForSelectAsync("listElection", TimeSpan.FromMinutes(5));
 
                 if (responce.TimedOut)
                     ElectionListMessage = null;
@@ -557,6 +561,18 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                                                               .Sum());
 
                     EditViewMessage();
+
+                    if(BitMaskElection.HasFlag(BitMaskElection.NotificationForAgree) || BitMaskElection.HasFlag(BitMaskElection.NotificationForNotVoted))
+                    {
+                        ElectionListMessage = null;
+
+                        ElectionListMessage = await ctx.Channel.SendMessageAsync(_GetBuilder2());
+
+                        var timeResponce = await ElectionListMessage.WaitForSelectAsync("notificationTime", TimeSpan.FromMinutes(5));
+
+                        BitMaskElection |= (BitMaskElection)(timeResponce.Result.Values.Select(x => Convert.ToInt64(x))
+                                                                                       .Sum());
+                    }
                 }
 
                 ElectionListMessage = null;
@@ -568,18 +584,51 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                     var options = new DiscordSelectComponentOption[]
                     {
-                        new DiscordSelectComponentOption("Список согласных", ((ulong)BitMaskElection.AgreeList).ToString(), 
-                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.AgreeList) ? true : false),
+                        new DiscordSelectComponentOption("Список согласных", ((ulong)BitMaskElection.AgreeList).ToString(),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.AgreeList) ? true : false),
                         new DiscordSelectComponentOption("Список отказавшихся", ((ulong)BitMaskElection.RejectList).ToString(),
-                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.RejectList) ? true : false),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.RejectList) ? true : false),
                         new DiscordSelectComponentOption("Список воздержавшихся", ((ulong)BitMaskElection.NotVotedList).ToString(),
-                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.NotVotedList) ? true : false),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotVotedList) ? true : false),
                         new DiscordSelectComponentOption("Уведомление для согласившихся", ((ulong)BitMaskElection.NotificationForAgree).ToString(),
-                                                         isDefault: BitMaskElection.HasFlag(BitMaskElection.NotificationForAgree) ? true : false),
-                        new DiscordSelectComponentOption("Уведомление для воздежавшихся", ((ulong)BitMaskElection.NotificationForNotVoted).ToString(), 
-                                                         isDefault : BitMaskElection.HasFlag(BitMaskElection.NotificationForNotVoted) ? true : false),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationForAgree) ? true : false),
+                        new DiscordSelectComponentOption("Уведомление для воздежавшихся", ((ulong)BitMaskElection.NotificationForNotVoted).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationForNotVoted) ? true : false),
                     };
                     builder.AddComponents(new DiscordSelectComponent("listElection", null, options, maxOptions: options.Length));
+
+                    return builder;
+                }
+
+                DiscordMessageBuilder _GetBuilder2()
+                {
+                    DiscordMessageBuilder builder = new DiscordMessageBuilder();
+                    builder.WithContent("Выберите за какое время до начала события оповещать о необходимости проголосовать и о начале события");
+
+                    var options = new DiscordSelectComponentOption[]
+                    {
+                        new DiscordSelectComponentOption("Уведомлять за 15 минут до события", ((ulong)BitMaskElection.NotificationBefore_15Minutes).ToString(),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_15Minutes) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за час до события", ((ulong)BitMaskElection.NotificationBefore_1Hour).ToString(),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_1Hour) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за 2 часа до события", ((ulong)BitMaskElection.NotificationBefore_2Hour).ToString(),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_2Hour) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за 6 часов до события", ((ulong)BitMaskElection.NotificationBefore_6Hour).ToString(),
+                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_6Hour) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за 12 часов до события", ((ulong)BitMaskElection.NotificationBefore_12Hour).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationBefore_12Hour) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за день до события", ((ulong)BitMaskElection.NotificationBefore_24Hour).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationBefore_24Hour) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за два дня до события", ((ulong)BitMaskElection.NotificationBefore_48Hour).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationBefore_48Hour) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за неделю до события", ((ulong)BitMaskElection.NotificationBefore_1Week).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationBefore_1Week) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за 2 недели до события", ((ulong)BitMaskElection.NotificationBefore_2Week).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationBefore_2Week) ? true : false),
+                        new DiscordSelectComponentOption("Уведомлять за месяц до события", ((ulong)BitMaskElection.NotificationBefore_1Mounth).ToString(),
+                                                         isDefault : oldBitMask.HasFlag(BitMaskElection.NotificationBefore_1Mounth) ? true : false),
+                    };
+                    builder.AddComponents(new DiscordSelectComponent("notificationTime", null, options, maxOptions: options.Length));
 
                     return builder;
                 }

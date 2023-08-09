@@ -35,6 +35,8 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
             cancellationTokenSource = new CancellationTokenSource();
 
             logger.LogDebug("Запуск цикла");
+            UpdateCycle(DelayBetwenCycles, cancellationTokenSource);
+
         }
 
         public async void EndCycles()
@@ -53,7 +55,7 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
 
             while(token.IsCancellationRequested == false)
             {
-                new ElectionNotificate().SendNotificationToPeopleAsync(cancellationTokenSource);
+                await new ElectionNotificate().SendNotificationToPeopleAsync(cancellationTokenSource);
 
                 await Task.Delay(Delay);
             }

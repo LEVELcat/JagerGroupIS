@@ -1,10 +1,10 @@
 ﻿using DbLibrary.JagerDsModel;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
 {
@@ -21,22 +21,283 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
             Election[] elections = null;
             //TimeSpan
 
-            //using (JagerDbContext electionContext = new JagerDbContext())
-            //{
-            //    elections = (from el in electionContext.Elections
-            //                 where el.EndTime.Value.Subtract(new TimeSpan) )
+            using (JagerDbContext electionContext = new JagerDbContext())
+            {
+                elections = await (from el in electionContext.Elections
+                                   where el.BitMaskSettings >= BitMaskElection.NotificationBefore_1Mounth
+                                   select el).AsNoTracking().ToArrayAsync();
 
+                logger.LogInformation("Список событий получен");
 
+                logger.LogDebug("Освобождение ресурсов electionContext");
 
-            //    await electionContext.DisposeAsync();
-            //} 
+                await electionContext.DisposeAsync();
+            }
 
+            Dictionary<uint, BitMaskElection> modifyedBitMask = new Dictionary<uint, BitMaskElection>();
 
+            foreach (var election in elections)
+            {
+                if ((election.BitMaskSettings.HasFlag(BitMaskElection.NotificationForAgree) &&
+                     election.BitMaskSettings.HasFlag(BitMaskElection.NotificationForNotVoted)
+                    ) == false)
+                    continue;
 
+                BitMaskElection newBitmask = election.BitMaskSettings;
 
+                var settingsMaskes = Enum.GetValues(typeof(BitMaskElection));
+                Array.Reverse(settingsMaskes);
+
+                bool notificationWasSended = false;
+                TimeSpan substractTime;
+
+                foreach (BitMaskElection settingMask in settingsMaskes)
+                {
+                    if (election.BitMaskSettings.HasFlag(settingMask))
+                    {
+                        switch (settingMask)
+                        {
+                            case BitMaskElection.NotificationBefore_15Minutes:
+                                substractTime = new TimeSpan(0, 15, 0);
+                                if (election.EndTime.Value.Subtract(substractTime).CompareTo(DateTime.Now) <= 0)
+                                {
+                                    newBitmask &= (~settingMask);
+                                    notificationWasSended = true;
+
+                                    SendMessageNotificationToEventAsync(election, true, eventIsNow: true);
+                                }
+                                break;
+
+                            case BitMaskElection.NotificationBefore_1Hour:
+                                substractTime = new TimeSpan(1, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_2Hour:
+                                substractTime = new TimeSpan(2, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_6Hour:
+                                substractTime = new TimeSpan(6, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_12Hour:
+                                substractTime = new TimeSpan(12, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_24Hour:
+                                substractTime = new TimeSpan(1, 0, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, true, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_48Hour:
+                                substractTime = new TimeSpan(2, 0, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_1Week:
+                                substractTime = new TimeSpan(7, 0, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_2Week:
+                                substractTime = new TimeSpan(14, 0, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+
+                            case BitMaskElection.NotificationBefore_1Mounth:
+                                substractTime = new TimeSpan(30, 0, 0, 0);
+                                CheckParams(substractTime, election, ref newBitmask, settingMask, false, ref notificationWasSended);
+                                break;
+                        }
+                    }
+                }
+
+                if (newBitmask != election.BitMaskSettings)
+                    modifyedBitMask.Add(election.ID, newBitmask);
+            }
+
+            using (JagerDbContext electionBitMaskContext = new JagerDbContext())
+            {
+                var changedElections = await (from e in electionBitMaskContext.Elections
+                                       where modifyedBitMask.Keys.Contains(e.ID)
+                                       select e).ToArrayAsync();
+
+                foreach(var elec in changedElections)
+                    elec.BitMaskSettings = modifyedBitMask[elec.ID];
+
+                await electionBitMaskContext.SaveChangesAsync();
+
+                electionBitMaskContext.DisposeAsync();
+            }
+
+            //TODO: поменяй маску
+
+            GC.Collect();
+
+            void CheckParams(TimeSpan BeforeTime, Election election, ref BitMaskElection newBitmask, BitMaskElection settingMask, bool sendForAgreeUser, ref bool notificationWasSended)
+            {
+                if (election.EndTime.Value.Subtract(BeforeTime).CompareTo(DateTime.Now) <= 0)
+                {
+                    newBitmask &= (~settingMask);
+                    if (notificationWasSended == false)
+                    {
+                        notificationWasSended = true;
+                        SendMessageNotificationToEventAsync(election, sendForAgreeUser);
+                    }
+
+                }
+            }
         }
 
+        private async Task SendMessageNotificationToEventAsync(Election election, bool sendForAgreeUser, bool eventIsNow = false)
+        {
 
+            DiscordClient? client = null;
+
+            DiscordGuild guild = null;
+            DiscordChannel channel = null;
+            DiscordMessage message = null;
+
+            string title = string.Empty;
+
+            try
+            {
+                client = DiscordApp.DiscordBot.Client;
+                guild = await client.GetGuildAsync(election.GuildID);
+                channel = guild.GetChannel(election.ChanelID);
+                message = await channel.GetMessageAsync(election.MessageID);
+                title = message.Embeds[0].Title;
+            }
+            catch
+            {
+                return;
+            }
+
+            ulong[] includeRolesID = null;
+            ulong[] excludeRolesID = null;
+
+            string[] botSpeechForBadGuy = null;
+            Random random = null;
+
+            if (eventIsNow)
+            {
+                random = new Random();
+
+                using (JagerDbContext speechContext = new JagerDbContext())
+                {
+                    botSpeechForBadGuy = await (from t in speechContext.TextsForBadGuy
+                                                select t.BotSpeech).AsNoTracking().ToArrayAsync();
+
+                    speechContext.DisposeAsync();
+                }
+
+            }
+
+            using (JagerDbContext roleSetupsContext = new JagerDbContext())
+            {
+                includeRolesID = await (from r in roleSetupsContext.RoleSetups.AsNoTracking()
+                                        where r.ElectionID == election.ID && r.IsTakingPart == true
+                                        select r.Roles.RoleDiscordID).ToArrayAsync();
+
+                excludeRolesID = await (from r in roleSetupsContext.RoleSetups.AsNoTracking()
+                                        where r.ElectionID == election.ID && r.IsTakingPart == false
+                                        select r.Roles.RoleDiscordID).ToArrayAsync();
+
+                roleSetupsContext.DisposeAsync();
+            }
+
+            var members = (from m in await (await client.GetGuildAsync(election.GuildID)).GetAllMembersAsync()
+                           let rolesId = m.Roles.Select(r => r.Id).ToArray()
+                           where
+                                (Array.Exists<ulong>(rolesId, r => includeRolesID.Contains(r)) == true)
+                                &&
+                                (Array.Exists<ulong>(rolesId, r => excludeRolesID.Contains(r)) == false)
+                           select m).ToArray();
+
+            using (JagerDbContext voteContext = new JagerDbContext())
+            {
+                if (election.BitMaskSettings.HasFlag(BitMaskElection.NotificationForNotVoted))
+                {
+                    var votes = (from v in voteContext.Votes
+                                 where v.ElectionID == election.ID
+                                 group v by v.MemberID).AsNoTracking().ToArray();
+
+                    var IDsOfVoted = (from v in votes
+                                      let vL = v.Last()
+                                      where vL.VoteValue == false || vL.VoteValue == true
+                                      join m in members on vL.MemberID equals m.Id
+                                      select new { m.Id, vL.VoteValue }).ToArray();
+
+                    var notVotedMember = members.Where(m => IDsOfVoted.Select(x => x.Id).Contains(m.Id) == false);
+
+                    foreach (var member in notVotedMember)
+                    {
+                        if(eventIsNow)
+                        {
+                            member.SendMessageAsync(notificationForNotVoted(true));
+                        }
+                        else
+                            member.SendMessageAsync(notificationForNotVoted());
+                    }
+                }
+
+                if (sendForAgreeUser && (election.BitMaskSettings.HasFlag(BitMaskElection.NotificationForAgree) == true))
+                {
+                    var votes = (from v in voteContext.Votes
+                                 where v.ElectionID == election.ID
+                                 group v by v.MemberID).ToArray();
+
+
+                    var IDsOfAgreeVote = (from v in votes
+                                          let vL = v.Last()
+                                          where vL.VoteValue == true
+                                          join m in members on vL.MemberID equals m.Id
+                                          select  m.Id).ToArray();
+
+                    var agreeVotedMember = members.Where(m => IDsOfAgreeVote.Contains(m.Id));
+
+                    foreach (var member in agreeVotedMember)
+                    {
+                        if (eventIsNow)
+                        {
+                            member.SendMessageAsync(notificationForVoted(true));
+                        }
+                        else
+                            member.SendMessageAsync(notificationForVoted());
+                    }
+                }
+
+                voteContext.DisposeAsync();
+            }
+
+            GC.Collect();
+
+            DiscordMessageBuilder notificationForNotVoted(bool eventIsNow = false)
+            {
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+                if(eventIsNow)
+                    messageBuilder.WithContent(botSpeechForBadGuy[random.Next(0, botSpeechForBadGuy.Length)]);
+                else
+                    messageBuilder.WithContent($"Скоро {Formatter.Timestamp(election.EndTime.Value)} начнется событие {title}\n\nНо вашей метки нет\n Рекомендую проголосовать сейчас,\nчто бы не забыть");
+                return messageBuilder;
+            }
+
+            DiscordMessageBuilder notificationForVoted(bool eventIsNow = false)
+            {
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+                if(eventIsNow)
+                    messageBuilder.WithContent($"Сейчас ({Formatter.Timestamp(election.EndTime.Value)}) начнется событие {title}\nБлагодарим что пользуетесь нашей напоминалкой");
+                else
+                    messageBuilder.WithContent($"Скоро {Formatter.Timestamp(election.EndTime.Value)} начнется событие {title}\nБлагодарим что пользуетесь нашей напоминалкой");
+                return messageBuilder;
+            }
+        }
 
     }
 }

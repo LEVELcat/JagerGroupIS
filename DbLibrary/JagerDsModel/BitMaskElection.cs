@@ -26,6 +26,6 @@ namespace DbLibrary.JagerDsModel
         NotificationBefore_6Hour = 576460752303423488,
         NotificationBefore_2Hour = 1152921504606846976,
         NotificationBefore_1Hour = 2305843009213693952,
-        NotificationBefore_NOW = 4611686018427387904,
+        NotificationBefore_15Minutes = 4611686018427387904,
     }
 }
