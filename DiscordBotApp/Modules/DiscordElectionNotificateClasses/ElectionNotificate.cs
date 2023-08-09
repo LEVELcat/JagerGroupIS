@@ -230,9 +230,9 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                                       let vL = v.Last()
                                       where vL.VoteValue == false || vL.VoteValue == true
                                       join m in members on vL.MemberID equals m.Id
-                                      select new { m.Id, vL.VoteValue }).ToArray();
+                                      select m.Id).ToArray();
 
-                    var notVotedMember = members.Where(m => IDsOfVoted.Select(x => x.Id).Contains(m.Id) == false);
+                    var notVotedMember = members.Where(m => IDsOfVoted.Contains(m.Id) == false);
 
                     foreach (var member in notVotedMember)
                     {
@@ -258,7 +258,7 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                                           join m in members on vL.MemberID equals m.Id
                                           select  m.Id).ToArray();
 
-                    var agreeVotedMember = members.Where(m => IDsOfAgreeVote.Contains(m.Id));
+                    var agreeVotedMember = members.Where(m => IDsOfAgreeVote.Contains(m.Id) == true);
 
                     foreach (var member in agreeVotedMember)
                     {

@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
 {
@@ -102,13 +103,15 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 byte fieldIndex = 0;
 
-                var members = (from m in componentInteraction.Guild.Members.Values
-                               let rolesId = m.Roles.Select(r => r.Id).ToArray()
+                var fullMembers = componentInteraction.Guild.Members.ToArray();
+
+                var members = (from m in fullMembers
+                               let rolesId = m.Value.Roles.Select(r => r.Id).ToArray()
                                where
                                     (Array.Exists<ulong>(rolesId, r => includedRolesID.Contains(r)) == true) 
                                      && 
                                     (Array.Exists<ulong>(rolesId, r => excludedRolesID.Contains(r)) == false)
-                               select new { m.Id, m.DisplayName }).ToList();
+                               select new { m.Value.Id, m.Value.DisplayName }).ToList();
 
                 //IT'S REMOVED ITALICS FONT
                 for (int i = 0; i < members.Count; i++)

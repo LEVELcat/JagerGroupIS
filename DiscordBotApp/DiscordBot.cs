@@ -43,9 +43,6 @@ namespace DiscordApp
                 });
                 commands.RegisterCommands<ElectionModule>();
                 commands.RegisterCommands<StatisticModule>();
-#if DEBUG
-                commands.RegisterCommands<TestModule>();
-#endif
                 commands.RegisterCommands<NotificationCycleModule>();
                 //commands.SetHelpFormatter<CustomHelpFormatter>();
 
