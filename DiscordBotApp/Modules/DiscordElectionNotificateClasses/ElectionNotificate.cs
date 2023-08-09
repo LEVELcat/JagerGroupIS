@@ -1,6 +1,7 @@
 ﻿using DbLibrary.JagerDsModel;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -183,6 +184,8 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
             string[] botSpeechForBadGuy = null;
             Random random = null;
 
+            List<DiscordMember> banList = new List<DiscordMember>();
+
             if (eventIsNow)
             {
                 random = new Random();
@@ -236,12 +239,21 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
 
                     foreach (var member in notVotedMember)
                     {
-                        if(eventIsNow)
+                        try
                         {
-                            member.SendMessageAsync(notificationForNotVoted(true));
+                            if (eventIsNow)
+                            {
+                                var banCheck = member.SendMessageAsync(notificationForNotVoted(true)).Result;
+                            }
+                            else
+                            {
+                                var banCheck = member.SendMessageAsync(notificationForNotVoted()).Result;
+                            }
                         }
-                        else
-                            member.SendMessageAsync(notificationForNotVoted());
+                        catch (Exception ex)
+                        {
+                            banList.Add(member);
+                        }
                     }
                 }
 
@@ -262,17 +274,37 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
 
                     foreach (var member in agreeVotedMember)
                     {
-                        if (eventIsNow)
+                        try
                         {
-                            member.SendMessageAsync(notificationForVoted(true));
+                            if (eventIsNow)
+                            {
+                                var banCheck = member.SendMessageAsync(notificationForVoted(true)).Result;
+                            }
+                            else
+                            {
+                                var banCheck = member.SendMessageAsync(notificationForVoted()).Result;
+                            }
                         }
-                        else
-                            member.SendMessageAsync(notificationForVoted());
+                        catch (Exception ex)
+                        {
+                            banList.Add(member);
+                        }
                     }
                 }
 
                 voteContext.DisposeAsync();
             }
+
+            if(banList.Count > 0)
+            {
+                DiscordMessageBuilder builder = new DiscordMessageBuilder();
+
+                builder.WithContent("Так-так-так, бота забанили в лс? Ну будем разбираться\n\n" + String.Join('\n', banList.Select(x => x.Mention)));
+
+                channel.SendMessageAsync(builder);
+            }
+
+
 
             GC.Collect();
 
