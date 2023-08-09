@@ -25,33 +25,43 @@ namespace DiscordApp
 
         public static async Task AsyncMain(params string[] args)
         {
-            var discord = new DiscordClient(DiscordConfigurator.GetConfig());
-            discord.UseInteractivity(DiscordConfigurator.GetInteractivityConfiguration());
-
-            IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
-            serviceCollection.AddTransient<Modules.ElectionModuleClasses.ElectionResponce>();
-            //serviceCollection.AddSingleton<ElectionSingleton>();
-            var services = serviceCollection.BuildServiceProvider();
-
-            var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
+            try
             {
-                StringPrefixes = new[] { "!" },
-                Services = services
+                var discord = new DiscordClient(DiscordConfigurator.GetConfig());
+                discord.UseInteractivity(DiscordConfigurator.GetInteractivityConfiguration());
 
-            });
-            commands.RegisterCommands<ElectionModule>();
-            commands.RegisterCommands<StatisticModule>();
-            commands.RegisterCommands<TestModule>();
-            commands.RegisterCommands<NotificationCycleModule>();
-            //commands.SetHelpFormatter<CustomHelpFormatter>();
+                IServiceCollection serviceCollection = new ServiceCollection().AddSingleton<Random>();
+                serviceCollection.AddTransient<ElectionResponce>();
+                //serviceCollection.AddSingleton<ElectionSingleton>();
+                var services = serviceCollection.BuildServiceProvider();
 
-            discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);
+                var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
+                {
+                    StringPrefixes = new[] { "!" },
+                    Services = services
 
-            await discord.ConnectAsync();
+                });
+                commands.RegisterCommands<ElectionModule>();
+                commands.RegisterCommands<StatisticModule>();
+#if DEBUG
+                commands.RegisterCommands<TestModule>();
+#endif
+                commands.RegisterCommands<NotificationCycleModule>();
+                //commands.SetHelpFormatter<CustomHelpFormatter>();
 
-            Client = discord;
+                discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);
 
-            await Task.Delay(-1);
+                await discord.ConnectAsync();
+
+                Client = discord;
+
+                await Task.Delay(-1);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.ToString());
+            }
         }
 
         private static AsyncEventHandler<DiscordClient, ComponentInteractionCreateEventArgs> RegistrateInteractionEvent(ServiceProvider services)
