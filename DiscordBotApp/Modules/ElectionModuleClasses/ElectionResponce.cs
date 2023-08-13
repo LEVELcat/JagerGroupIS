@@ -117,11 +117,15 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 for (int i = 0; i < members.Count; i++)
                     members[i].DisplayName.Replace("_", "\\_");
 
+                var votes = (from v in election.Votes
+                             orderby v.VoteDateTime
+                             group v by v.MemberID).ToArray();
+
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.AgreeList))
                 {
                     embedBuilder.Fields[fieldIndex].Value = string.Empty;
 
-                    var yesList = (from v in election.Votes.GroupBy(d => d.MemberID)
+                    var yesList = (from v in votes
                                    let vL = v.Last()
                                    where vL.VoteValue == true
                                    orderby vL.VoteDateTime
@@ -141,7 +145,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 {
                     embedBuilder.Fields[fieldIndex].Value = string.Empty;
 
-                    var noList = (from v in election.Votes.GroupBy(d => d.MemberID)
+                    var noList = (from v in votes
                                   let vL = v.Last()
                                   where vL.VoteValue == false
                                   orderby vL.VoteDateTime

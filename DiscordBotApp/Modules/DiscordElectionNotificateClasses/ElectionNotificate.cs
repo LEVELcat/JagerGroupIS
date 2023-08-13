@@ -227,13 +227,13 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                 {
                     var votes = (from v in voteContext.Votes
                                  where v.ElectionID == election.ID
+                                 orderby v.VoteDateTime
                                  group v by v.MemberID).AsNoTracking().ToArray();
 
                     var IDsOfVoted = (from v in votes
                                       let vL = v.Last()
-                                      where vL.VoteValue == false || vL.VoteValue == true
-                                      join m in members on vL.MemberID equals m.Id
-                                      select m.Id).ToArray();
+                                      where vL.VoteValue != null
+                                      select vL.MemberID).ToArray();
 
                     var notVotedMember = members.Where(m => IDsOfVoted.Contains(m.Id) == false);
 
@@ -261,14 +261,14 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                 {
                     var votes = (from v in voteContext.Votes
                                  where v.ElectionID == election.ID
+                                 orderby v.VoteDateTime
                                  group v by v.MemberID).ToArray();
 
 
                     var IDsOfAgreeVote = (from v in votes
                                           let vL = v.Last()
                                           where vL.VoteValue == true
-                                          join m in members on vL.MemberID equals m.Id
-                                          select  m.Id).ToArray();
+                                          select vL.MemberID).ToArray();
 
                     var agreeVotedMember = members.Where(m => IDsOfAgreeVote.Contains(m.Id) == true);
 
@@ -287,7 +287,7 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                         }
                         catch (Exception ex)
                         {
-                            banList.Add(member);
+                            //banList.Add(member);
                         }
                     }
                 }
