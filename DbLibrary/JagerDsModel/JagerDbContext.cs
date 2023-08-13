@@ -8,6 +8,7 @@ namespace DbLibrary.JagerDsModel
         public DbSet<Role> Roles { get; set; }
         public DbSet<RoleSetup> RoleSetups { get; set; }
         public DbSet<Vote> Votes { get; set; }
+        public DbSet<TextForBadGuy> TextsForBadGuy { get; set; }
 
         public JagerDbContext()
         {

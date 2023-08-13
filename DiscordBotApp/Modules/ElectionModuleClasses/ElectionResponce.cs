@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
 {
@@ -10,8 +11,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
     {
         public async Task Responce(ComponentInteractionCreateEventArgs componentInteraction)
         {
-            await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
             using (JagerDbContext dbContext = new JagerDbContext())
             {
                 Election? election = dbContext.Elections.FirstOrDefault(e => e.GuildID == componentInteraction.Guild.Id &&
@@ -21,7 +20,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 if (election == null)
                     return;
 
-                ulong[] allowedRolesID = election.RoleSetups.Select(x => x.Roles.RoleDiscordID).ToArray();
+                ulong[] includedRolesID = election.RoleSetups.Where(x => x.IsTakingPart == true).Select(x => x.Roles.RoleDiscordID).ToArray();
+                ulong[] excludedRolesID = election.RoleSetups.Where(x => x.IsTakingPart == false).Select(x => x.Roles.RoleDiscordID).ToArray();
 
                 Vote? lastVote = election.Votes.LastOrDefault(v => v.MemberID == componentInteraction.User.Id);
 
@@ -29,14 +29,13 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 bool isAllowed = false;
 
-                foreach (var role in member.Roles)
-                {
-                    if (allowedRolesID.Contains(role.Id))
-                    {
+
+                var idRoldes = member.Roles.Select(x => x.Id).ToArray();
+
+                if (Array.Exists<ulong>(idRoldes, r => includedRolesID.Contains(r)) == true)
+                    if (Array.Exists<ulong>(idRoldes, r => excludedRolesID.Contains(r)) == false)
                         isAllowed = true;
-                        break;
-                    }
-                }
+
 
                 if (isAllowed == false)
                     return;
@@ -104,19 +103,29 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 byte fieldIndex = 0;
 
-                var members = (from m in componentInteraction.Guild.Members.Values
-                               where m.Roles.Any(r => allowedRolesID.Contains(r.Id))
-                               select new { m.Id, m.DisplayName }).ToList();
+                var fullMembers = componentInteraction.Guild.Members.ToArray();
+
+                var members = (from m in fullMembers
+                               let rolesId = m.Value.Roles.Select(r => r.Id).ToArray()
+                               where
+                                    (Array.Exists<ulong>(rolesId, r => includedRolesID.Contains(r)) == true) 
+                                     && 
+                                    (Array.Exists<ulong>(rolesId, r => excludedRolesID.Contains(r)) == false)
+                               select new { m.Value.Id, m.Value.DisplayName }).ToList();
 
                 //IT'S REMOVED ITALICS FONT
                 for (int i = 0; i < members.Count; i++)
                     members[i].DisplayName.Replace("_", "\\_");
 
+                var votes = (from v in election.Votes
+                             orderby v.VoteDateTime
+                             group v by v.MemberID).ToArray();
+
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.AgreeList))
                 {
                     embedBuilder.Fields[fieldIndex].Value = string.Empty;
 
-                    var yesList = (from v in election.Votes.GroupBy(d => d.MemberID)
+                    var yesList = (from v in votes
                                    let vL = v.Last()
                                    where vL.VoteValue == true
                                    orderby vL.VoteDateTime
@@ -136,7 +145,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 {
                     embedBuilder.Fields[fieldIndex].Value = string.Empty;
 
-                    var noList = (from v in election.Votes.GroupBy(d => d.MemberID)
+                    var noList = (from v in votes
                                   let vL = v.Last()
                                   where vL.VoteValue == false
                                   orderby vL.VoteDateTime
@@ -160,8 +169,12 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 messageBuilder.Embed = embedBuilder;
                 componentInteraction.Message.ModifyAsync(messageBuilder);
 
+                await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
                 dbContext.DisposeAsync();
                 GC.Collect();
+
+
             }
         }
     }

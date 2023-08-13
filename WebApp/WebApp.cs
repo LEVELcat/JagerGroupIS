@@ -19,8 +19,11 @@ namespace WebApp
             DiscordApp.DiscordBot.AsyncMain(args);
             Console.WriteLine("Discord Bot Start");
 
+#if DEBUG == false
             AspAppMain(args);
-
+#else
+            AspAppMain(args);
+#endif
             Console.ReadKey();
         }
 
