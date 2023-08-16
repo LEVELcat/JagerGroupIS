@@ -52,22 +52,27 @@ namespace WebApp.Services.RconScanerService
                         {
                             logger.LogDebug("Получение ID последнего матча");
 
-                            var matchIDs = (from s in lastMatchContext.Servers
-                                            where s.ServerGroupID == serverGroup.ID
-                                            select s.Matches.Select(m => m.ServerLocalMatchId));
+                            var servers = await (from s in lastMatchContext.Servers
+                                                 where s.ServerGroupID == serverGroup.ID
+                                                 select s.ID).ToArrayAsync();
 
-                            var nums = await matchIDs.SelectMany(matchID => matchID).ToListAsync();
+                            var matchesID = await (from m in lastMatchContext.ServerMatches
+                                                   where servers.Contains(m.ServerID)
+                                                   orderby m.ID
+                                                   select m.ServerLocalMatchId).ToArrayAsync();
 
-                            if (nums.Count == 0)
+                            var lastMatchID = matchesID.LastOrDefault();
+
+
+                            if (lastRconServerMatchID < lastMatchID)
                                 lastDbMatchId = 0;
                             else
-                                lastDbMatchId = nums.Max();
-
-
+                                lastDbMatchId = lastMatchID;
 
                             logger.LogDebug("Освобождение ресурсов outdatedMatchContext");
                             await lastMatchContext.DisposeAsync();
                         }
+
 
                         logger.LogInformation("Старт цикла запросов из RCON API");
 
