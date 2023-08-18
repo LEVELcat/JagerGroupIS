@@ -101,6 +101,20 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
 
+                //FIXER OF OLD ELECTION
+                //embedBuilder.ClearFields();
+                //embedBuilder.AddField("<:emoji_134:941666424324239430> ", "empty", true);
+                //embedBuilder.AddField("_", "empty", true);
+                //embedBuilder.AddField("_", "empty", true);
+
+                //embedBuilder.AddField("<:1_:941666407513473054> ", "empty", true);
+                //embedBuilder.AddField("_", "empty", true);
+                //embedBuilder.AddField("_", "empty", true);
+
+                //embedBuilder.AddField("<a:load:1112311359548444713>  ", "empty", true);
+                //embedBuilder.AddField("_", "empty", true);
+                //embedBuilder.AddField("_", "empty", true);
+
                 byte fieldIndex = 0;
 
                 var fullMembers = componentInteraction.Guild.Members.ToArray();
@@ -111,11 +125,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                     (Array.Exists<ulong>(rolesId, r => includedRolesID.Contains(r)) == true) 
                                      && 
                                     (Array.Exists<ulong>(rolesId, r => excludedRolesID.Contains(r)) == false)
-                               select new { m.Value.Id, m.Value.DisplayName }).ToList();
+                               select new { m.Value.Id, m.Value.Mention }).ToList();
 
-                //IT'S REMOVED ITALICS FONT
-                for (int i = 0; i < members.Count; i++)
-                    members[i].DisplayName.Replace("_", "\\_");
+                ////IT'S REMOVED ITALICS FONT
+                //for (int i = 0; i < members.Count; i++)
+                //    members[i].DisplayName.Replace("_", "\\_");
 
                 var votes = (from v in election.Votes
                              orderby v.VoteDateTime
@@ -130,15 +144,22 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                    where vL.VoteValue == true
                                    orderby vL.VoteDateTime
                                    join m in members on vL.MemberID equals m.Id
-                                   select new { m.Id, m.DisplayName }).ToArray();
+                                   select new { m.Id, m.Mention }).ToArray();
 
                     foreach (var v in yesList)
                         members.RemoveAll(m => m.Id == v.Id);
 
 
                     embedBuilder.Fields[fieldIndex].Name = "<:emoji_134:941666424324239430> " + yesList.Length;
-                    embedBuilder.Fields[fieldIndex].Value = string.Join('\n', yesList.Select(n => n.DisplayName).AsEnumerable());
-                    fieldIndex++;
+
+                    for(int i = 0; i < 3; i++)
+                    {
+                        var part = yesList.Skip(i * ((yesList.Length + 1) / 3)).Take((yesList.Length + 1) / 3);
+
+                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", part.Select(p => p.Mention));
+
+                        fieldIndex++;
+                    }
                 }
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.RejectList))
@@ -150,26 +171,41 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                   where vL.VoteValue == false
                                   orderby vL.VoteDateTime
                                   join m in members on vL.MemberID equals m.Id
-                                  select new { m.Id, m.DisplayName }).ToArray();
+                                  select new { m.Id, m.Mention }).ToArray();
 
                     foreach (var v in noList)
                         members.RemoveAll(m => m.Id == v.Id);
 
                     embedBuilder.Fields[fieldIndex].Name = "<:1_:941666407513473054> " + noList.Length;
-                    embedBuilder.Fields[fieldIndex].Value = string.Join('\n', noList.Select(n => n.DisplayName).AsEnumerable());
-                    fieldIndex++;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        var part = noList.Skip(i * ((noList.Length + 1) / 3)).Take((noList.Length + 1) / 3);
+
+                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", part.Select(p => p.Mention));
+
+                        fieldIndex++;
+                    }
                 }
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.NotVotedList))
                 {
                     embedBuilder.Fields[fieldIndex].Name = "<a:load:1112311359548444713> " + members.Count;
-                    embedBuilder.Fields[fieldIndex].Value = string.Join('\n', members.Select(n => n.DisplayName).AsEnumerable());
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        var part = members.Skip(i * ((members.Count + 1) / 3)).Take((members.Count + 1) / 3);
+
+                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", part.Select(p => p.Mention));
+
+                        fieldIndex++;
+                    }
                 }
 
                 messageBuilder.Embed = embedBuilder;
-                componentInteraction.Message.ModifyAsync(messageBuilder);
 
                 await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                componentInteraction.Message.ModifyAsync(messageBuilder);
 
                 dbContext.DisposeAsync();
                 GC.Collect();

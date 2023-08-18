@@ -21,8 +21,6 @@ namespace WebApp
 
 #if DEBUG == false
             AspAppMain(args);
-#else
-            AspAppMain(args);
 #endif
             Console.ReadKey();
         }

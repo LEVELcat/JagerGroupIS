@@ -92,13 +92,25 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     EmbedBuilder.ClearFields();
 
                     if (BitMaskElection.HasFlag(BitMaskElection.AgreeList))
+                    {
                         EmbedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
+                        EmbedBuilder.AddField("_", "empty", true);
+                        EmbedBuilder.AddField("_", "empty", true);
+                    }
 
                     if (BitMaskElection.HasFlag(BitMaskElection.RejectList))
+                    {
                         EmbedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
+                        EmbedBuilder.AddField("_", "empty", true);
+                        EmbedBuilder.AddField("_", "empty", true);
+                    }
 
                     if (BitMaskElection.HasFlag(BitMaskElection.NotVotedList))
+                    {
                         EmbedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
+                        EmbedBuilder.AddField("_", "empty", true);
+                        EmbedBuilder.AddField("_", "empty", true);
+                    }
                 }
             }
 
@@ -572,6 +584,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                         BitMaskElection |= (BitMaskElection)(timeResponce.Result.Values.Select(x => Convert.ToInt64(x))
                                                                                        .Sum());
+
+                        BitMaskElection |= BitMaskElection.NotificationBefore_15Minutes;
                     }
                 }
 
@@ -607,8 +621,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                     var options = new DiscordSelectComponentOption[]
                     {
-                        new DiscordSelectComponentOption("Уведомлять за 15 минут до события", ((ulong)BitMaskElection.NotificationBefore_15Minutes).ToString(),
-                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_15Minutes) ? true : false),
+                        //new DiscordSelectComponentOption("Уведомлять за 15 минут до события", ((ulong)BitMaskElection.NotificationBefore_15Minutes).ToString(),
+                        //                                 isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_15Minutes) ? true : false),
                         new DiscordSelectComponentOption("Уведомлять за час до события", ((ulong)BitMaskElection.NotificationBefore_1Hour).ToString(),
                                                          isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_1Hour) ? true : false),
                         new DiscordSelectComponentOption("Уведомлять за 2 часа до события", ((ulong)BitMaskElection.NotificationBefore_2Hour).ToString(),
