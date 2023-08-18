@@ -68,7 +68,7 @@ namespace WebApp
             using (StatisticDbContext db = new StatisticDbContext())
             {
                 Console.WriteLine("Проверка соединения с БД");
-                Console.WriteLine(db.ServerGroups.SingleAsync().Result.ServerGroupName);
+                Console.WriteLine(db.ServerGroups.FirstOrDefaultAsync().Result.ServerGroupName);
 
                 db.DisposeAsync();
             }
