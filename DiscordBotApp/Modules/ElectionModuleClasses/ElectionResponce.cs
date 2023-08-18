@@ -101,20 +101,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
 
-                //FIXER OF OLD ELECTION
-                //embedBuilder.ClearFields();
-                //embedBuilder.AddField("<:emoji_134:941666424324239430> ", "empty", true);
-                //embedBuilder.AddField("_", "empty", true);
-                //embedBuilder.AddField("_", "empty", true);
-
-                //embedBuilder.AddField("<:1_:941666407513473054> ", "empty", true);
-                //embedBuilder.AddField("_", "empty", true);
-                //embedBuilder.AddField("_", "empty", true);
-
-                //embedBuilder.AddField("<a:load:1112311359548444713>  ", "empty", true);
-                //embedBuilder.AddField("_", "empty", true);
-                //embedBuilder.AddField("_", "empty", true);
-
                 byte fieldIndex = 0;
 
                 var fullMembers = componentInteraction.Guild.Members.ToArray();
@@ -126,10 +112,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                      && 
                                     (Array.Exists<ulong>(rolesId, r => excludedRolesID.Contains(r)) == false)
                                select new { m.Value.Id, m.Value.Mention }).ToList();
-
-                ////IT'S REMOVED ITALICS FONT
-                //for (int i = 0; i < members.Count; i++)
-                //    members[i].DisplayName.Replace("_", "\\_");
 
                 var votes = (from v in election.Votes
                              orderby v.VoteDateTime
@@ -152,12 +134,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                     embedBuilder.Fields[fieldIndex].Name = "<:emoji_134:941666424324239430> " + yesList.Length;
 
-                    for(int i = 0; i < 3; i++)
+                    var chunks = yesList.Chunk(yesList.Length / 3 + (yesList.Length % 3 == 0 ? 0 : 1));
+
+                    foreach(var chunk in chunks)
                     {
-                        var part = yesList.Skip(i * ((yesList.Length + 1) / 3)).Take((yesList.Length + 1) / 3);
-
-                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", part.Select(p => p.Mention));
-
+                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", chunk.Select(c => c.Mention));
                         fieldIndex++;
                     }
                 }
@@ -177,12 +158,13 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                         members.RemoveAll(m => m.Id == v.Id);
 
                     embedBuilder.Fields[fieldIndex].Name = "<:1_:941666407513473054> " + noList.Length;
-                    for (int i = 0; i < 3; i++)
+
+
+                    var chunks = noList.Chunk(noList.Length / 3 + (noList.Length % 3 == 0 ? 0 : 1));
+
+                    foreach (var chunk in chunks)
                     {
-                        var part = noList.Skip(i * ((noList.Length + 1) / 3)).Take((noList.Length + 1) / 3);
-
-                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", part.Select(p => p.Mention));
-
+                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", chunk.Select(c => c.Mention));
                         fieldIndex++;
                     }
                 }
@@ -191,12 +173,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 {
                     embedBuilder.Fields[fieldIndex].Name = "<a:load:1112311359548444713> " + members.Count;
 
-                    for (int i = 0; i < 3; i++)
+                    var chunks = members.Chunk(members.Count / 3 + (members.Count % 3 == 0 ? 0 : 1));
+
+                    foreach (var chunk in chunks)
                     {
-                        var part = members.Skip(i * ((members.Count + 1) / 3)).Take((members.Count + 1) / 3);
-
-                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", part.Select(p => p.Mention));
-
+                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", chunk.Select(c => c.Mention));
                         fieldIndex++;
                     }
                 }

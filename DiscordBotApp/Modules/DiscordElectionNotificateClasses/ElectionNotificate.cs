@@ -270,6 +270,8 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                                     DiscordMemberID = id
                                 });
                         }
+
+                        badGuyContext.DisposeAsync();
                     }
                 }
 
