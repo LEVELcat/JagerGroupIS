@@ -185,7 +185,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     }
                     catch
                     {
-                        EmbedBuilder.Thumbnail.Url = thumbnailPictureURL;
+                        EmbedBuilder.WithThumbnail(thumbnailPictureURL);
                     }
                 }
             }
@@ -386,11 +386,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     else
                         errorResponceStr += "Некорректная дата\n";
 
-                if (values["image"] != string.Empty)
+                //if (values["image"] != string.Empty)
                     this.MainPictureURL = values["image"];
 
-                if (values["thumb"] != string.Empty)
-                    this.ThumbnailPictureURL = values["image"];
+                //if (values["thumb"] != string.Empty)
+                    this.ThumbnailPictureURL = values["thumb"];
 
                 if (errorResponceStr == string.Empty)
                     txtResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
