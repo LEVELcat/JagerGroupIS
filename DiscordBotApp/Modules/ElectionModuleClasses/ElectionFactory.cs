@@ -52,6 +52,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 election.ChanelID = chanel.Id;
                 election.MessageID = electionMessage.Id;
 
+                election.StartTime = DateTime.Now;
+
                 dbContext.Elections.Add(election);
 
                 await dbContext.SaveChangesAsync();
