@@ -96,22 +96,22 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     if (BitMaskElection.HasFlag(BitMaskElection.AgreeList))
                     {
                         EmbedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
-                        EmbedBuilder.AddField("_", "empty", true);
-                        EmbedBuilder.AddField("_", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
                     }
 
                     if (BitMaskElection.HasFlag(BitMaskElection.RejectList))
                     {
                         EmbedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
-                        EmbedBuilder.AddField("_", "empty", true);
-                        EmbedBuilder.AddField("_", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
                     }
 
                     if (BitMaskElection.HasFlag(BitMaskElection.NotVotedList))
                     {
                         EmbedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
-                        EmbedBuilder.AddField("_", "empty", true);
-                        EmbedBuilder.AddField("_", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
                     }
                 }
             }
