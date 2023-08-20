@@ -1,4 +1,5 @@
-﻿using DbLibrary.MetricsModel;
+﻿using DbLibrary.JagerDsModel;
+using DbLibrary.MetricsModel;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -81,7 +82,6 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
 
         public static async Task UpdateMessage(DiscordGuild Guild, DiscordChannel Channel, DiscordMessage Message)
         {
-
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder(Message);
 
             DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
@@ -91,6 +91,8 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
             ulong roleID = ulong.Parse(str);
 
             var role = Guild.GetRole(roleID);
+
+            embedBuilder.WithColor(role.Color);
 
             var members = (from m in Guild.Members.Values
                            where m.Roles.Contains(role)
@@ -113,6 +115,9 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
                 embedBuilder.Fields[chunkID].Value = string.Join("\n", chunk);
                 chunkID++;
             }
+
+            embedBuilder.Fields[0].Name = "Количество: " + members.Length;
+
             messageBuilder.Embed = embedBuilder;
 
             Message.ModifyAsync(messageBuilder);

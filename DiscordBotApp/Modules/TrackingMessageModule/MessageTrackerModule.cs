@@ -74,7 +74,7 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
                             await MembersTrackerByRole.UpdateMessage(TrackingMessage);
                             break;
                     }
-                    await Task.Delay(TimeSpan.FromMinutes(1));
+                    await Task.Delay(TimeSpan.FromMinutes(10));
                 }
             }
             catch
@@ -98,7 +98,7 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
                 foreach(var item in trackersInBd)
                 {
                     trackedMessages.Add(await MessageTracker.CreateTrackerAsync(item));
-                    await Task.Delay(TimeSpan.FromMinutes(2));
+                    await Task.Delay(TimeSpan.FromSeconds(40));
                 }
                 metricsDbContext.DisposeAsync();
             }
