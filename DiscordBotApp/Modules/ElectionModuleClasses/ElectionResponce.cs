@@ -2,6 +2,7 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 
@@ -92,7 +93,73 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                         break;
                     case "EL_UPDATE":
                         break;
-                    case "EL_DELETE":
+                    case "EL_DAYOFF":
+
+                        try
+                        {
+                            componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.Modal, _GetBuilder());
+
+                            var input = DiscordApp.DiscordBot.Client.GetInteractivity();
+
+                            var txtResponce = await input.WaitForModalAsync("el_responce4", TimeSpan.FromMinutes(5));
+
+                            if (txtResponce.TimedOut)
+                                return;
+
+                            var values = txtResponce.Result.Values;
+                            var txt = values["text"];
+
+                            txtResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                            var chanel = componentInteraction.Guild.GetChannel(1143478141071929364);
+
+                            await chanel.SendMessageAsync(_GetDayOffBuilderMessage());
+
+                            var vote = dbContext.Votes.FirstOrDefaultAsync(x => x.ElectionID == election.ID && x.MemberID == componentInteraction.User.Id && x.VoteValue != false);
+
+                            if (vote != null)
+                                goto case "EL_DENY";
+
+                            DiscordMessageBuilder _GetDayOffBuilderMessage()
+                            {
+                                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+                                DiscordEmbedBuilder discordEmbed = new DiscordEmbedBuilder();
+
+                                discordEmbed.Title = "Отгул";
+
+                                discordEmbed.WithDescription(string.Empty);
+
+                                discordEmbed.Description += componentInteraction.User.Mention + "\n";
+                                discordEmbed.Description += "На событие: " + componentInteraction.Channel.Mention + "\n";
+                                discordEmbed.Description += "По причние:\n";
+                                discordEmbed.Description += txt;
+
+                                messageBuilder.AddEmbed(discordEmbed);
+
+                                return messageBuilder;
+                            }
+
+                            DiscordInteractionResponseBuilder _GetBuilder()
+                            {
+                                DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
+
+                                responseBuilder.WithTitle("Оформить отгул");
+                                responseBuilder.WithCustomId("el_responce4");
+
+                                responseBuilder.AddComponents(new TextInputComponent("Причина для отгула", "text", value: string.Empty));
+
+                                return responseBuilder;
+                            }
+                        }
+                        catch (Exception ex) 
+                        {
+                            Console.WriteLine(ex.Message);
+                            Console.WriteLine(ex.ToString());
+                        }
+
+                        
+
                         break;
                 }
 
@@ -201,9 +268,6 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 messageBuilder.Embed = embedBuilder;
 
                 await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-
-                messageBuilder.ClearComponents();
-                messageBuilder.AddComponents(ElectionFactory.ReturnButtonComponents());
 
                 componentInteraction.Message.ModifyAsync(messageBuilder);
 
