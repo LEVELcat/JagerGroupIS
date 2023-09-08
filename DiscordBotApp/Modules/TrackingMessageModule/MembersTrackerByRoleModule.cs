@@ -26,7 +26,7 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
         {
             DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
 
-            embedBuilder.Title = "Состав роли:";
+            embedBuilder.Title = "Состав:";
 
             embedBuilder.Description = Role.Mention;
 
@@ -86,13 +86,15 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
 
             DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
 
+            embedBuilder.Title = "Состав:";
+
             var regexObj = new Regex(@"[^\d]");
             var str = regexObj.Replace(embedBuilder.Description, "");
             ulong roleID = ulong.Parse(str);
 
             var role = Guild.GetRole(roleID);
 
-            embedBuilder.WithColor(role.Color);
+            embedBuilder.WithColor(new DiscordColor("#2C2F33"));
 
             var members = (from m in Guild.Members.Values
                            where m.Roles.Contains(role)
@@ -116,7 +118,7 @@ namespace DiscordBotApp.Modules.TrackingMessageModule
                 chunkID++;
             }
 
-            embedBuilder.Fields[0].Name = "Количество: " + members.Length;
+            embedBuilder.Fields[0].Name = members.Length.ToString();
 
             messageBuilder.Embed = embedBuilder;
 

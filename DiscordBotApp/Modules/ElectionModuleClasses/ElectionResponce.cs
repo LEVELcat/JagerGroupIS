@@ -101,7 +101,23 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
 
-                byte fieldIndex = 0;
+                //PROBLEM FIXER
+                embedBuilder.ClearFields();
+                embedBuilder.AddField("<:emoji_134:941666424324239430> ", "ㅤ", true);
+                embedBuilder.AddField("<:1_:941666407513473054> ", "ㅤ", true);
+                embedBuilder.AddField("<a:load:1112311359548444713>  ", "ㅤ", true);
+
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+
+                byte columnIndex = 0;
+                const byte maxRows = 3;
+                const byte mentionsInField = 40;
 
                 var fullMembers = componentInteraction.Guild.Members.ToArray();
 
@@ -119,7 +135,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.AgreeList))
                 {
-                    embedBuilder.Fields[fieldIndex].Value = string.Empty;
+                    //embedBuilder.Fields[columnIndex + (rowIndex * 3)].Value = string.Empty;
 
                     var yesList = (from v in votes
                                    let vL = v.Last()
@@ -132,20 +148,21 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                         members.RemoveAll(m => m.Id == v.Id);
 
 
-                    embedBuilder.Fields[fieldIndex].Name = "<:emoji_134:941666424324239430> " + yesList.Length;
+                    embedBuilder.Fields[columnIndex].Name = "<:emoji_134:941666424324239430> " + yesList.Length;
 
-                    var chunks = yesList.Chunk(yesList.Length / 3 + (yesList.Length % 3 == 0 ? 0 : 1));
-
-                    foreach(var chunk in chunks)
+                    for(int i = 0; i < maxRows; i++)
                     {
-                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", chunk.Select(c => c.Mention));
-                        fieldIndex++;
+                        embedBuilder.Fields[columnIndex + (i * 3)].Value = string.Join("\n", yesList.Skip(i * mentionsInField)
+                                                                                                    .Take(mentionsInField)
+                                                                                                    .Select(x => x.Mention));
                     }
+
+                    columnIndex++;
                 }
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.RejectList))
                 {
-                    embedBuilder.Fields[fieldIndex].Value = string.Empty;
+                    //embedBuilder.Fields[columnIndex + (rowIndex * 3)].Value = string.Empty;
 
                     var noList = (from v in votes
                                   let vL = v.Last()
@@ -157,28 +174,27 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     foreach (var v in noList)
                         members.RemoveAll(m => m.Id == v.Id);
 
-                    embedBuilder.Fields[fieldIndex].Name = "<:1_:941666407513473054> " + noList.Length;
+                    embedBuilder.Fields[columnIndex].Name = "<:1_:941666407513473054> " + noList.Length;
 
-
-                    var chunks = noList.Chunk(noList.Length / 3 + (noList.Length % 3 == 0 ? 0 : 1));
-
-                    foreach (var chunk in chunks)
+                    for(int i = 0; i < maxRows; i++)
                     {
-                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", chunk.Select(c => c.Mention));
-                        fieldIndex++;
+                        embedBuilder.Fields[columnIndex + (i * 3)].Value = string.Join("\n", noList.Skip(i * mentionsInField)
+                                                                                                   .Take(mentionsInField)
+                                                                                                   .Select(x => x.Mention));
                     }
+
+                    columnIndex++;
                 }
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.NotVotedList))
                 {
-                    embedBuilder.Fields[fieldIndex].Name = "<a:load:1112311359548444713> " + members.Count;
+                    embedBuilder.Fields[columnIndex].Name = "<a:load:1112311359548444713> " + members.Count;
 
-                    var chunks = members.Chunk(members.Count / 3 + (members.Count % 3 == 0 ? 0 : 1));
-
-                    foreach (var chunk in chunks)
+                    for(int i = 0; i < maxRows; i++)
                     {
-                        embedBuilder.Fields[fieldIndex].Value = string.Join("\n", chunk.Select(c => c.Mention));
-                        fieldIndex++;
+                        embedBuilder.Fields[columnIndex + (i * 3)].Value = string.Join("\n", members.Skip(i * mentionsInField)
+                                                                                                    .Take(mentionsInField)
+                                                                                                    .Select(x => x.Mention));
                     }
                 }
 
@@ -186,12 +202,13 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
+                messageBuilder.ClearComponents();
+                messageBuilder.AddComponents(ElectionFactory.ReturnButtonComponents());
+
                 componentInteraction.Message.ModifyAsync(messageBuilder);
 
                 dbContext.DisposeAsync();
                 GC.Collect();
-
-
             }
         }
     }
