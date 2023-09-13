@@ -1,5 +1,4 @@
 ﻿using DbLibrary.JagerDsModel;
-using DiscordApp;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
@@ -7,10 +6,6 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Diagnostics.Tracing;
-using static System.Collections.Specialized.BitVector32;
 
 namespace DiscordBotApp.Modules.ElectionModuleClasses
 {
@@ -52,6 +47,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                 election.ChanelID = chanel.Id;
                 election.MessageID = electionMessage.Id;
 
+                election.StartTime = DateTime.Now;
+
                 dbContext.Elections.Add(election);
 
                 await dbContext.SaveChangesAsync();
@@ -69,16 +66,16 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     return result;
                 }
             }
+        }
 
-            DiscordComponent[] ReturnButtonComponents() => new DiscordComponent[]
-            {
+        public static DiscordComponent[] ReturnButtonComponents() => new DiscordComponent[]
+        {
                         new DiscordButtonComponent(ButtonStyle.Success, $"EL_APROVE", string.Empty, emoji: new DiscordComponentEmoji(941666424324239430)),
                         new DiscordButtonComponent(ButtonStyle.Danger, $"EL_DENY", string.Empty, emoji: new DiscordComponentEmoji(941666407513473054)),
                         new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_UPDATE", "Обновить список"),
                         //new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_EDIT", "Редактировать событие"),
-                        new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_DELETE", "🗑️")
-            };
-        }
+                        new DiscordButtonComponent(ButtonStyle.Secondary, $"EL_DAYOFF", "Оформить отгул")
+        };
 
         class ElectionSettings
         {
@@ -92,13 +89,25 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     EmbedBuilder.ClearFields();
 
                     if (BitMaskElection.HasFlag(BitMaskElection.AgreeList))
+                    {
                         EmbedBuilder.AddField("<:emoji_134:941666424324239430>", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                    }
 
                     if (BitMaskElection.HasFlag(BitMaskElection.RejectList))
+                    {
                         EmbedBuilder.AddField("<:1_:941666407513473054>", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                    }
 
                     if (BitMaskElection.HasFlag(BitMaskElection.NotVotedList))
+                    {
                         EmbedBuilder.AddField("<a:load:1112311359548444713>", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                        EmbedBuilder.AddField("ㅤ", "empty", true);
+                    }
                 }
             }
 
@@ -173,7 +182,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     }
                     catch
                     {
-                        EmbedBuilder.Thumbnail.Url = thumbnailPictureURL;
+                        EmbedBuilder.WithThumbnail(thumbnailPictureURL);
                     }
                 }
             }
@@ -325,8 +334,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
             private void UpdateMessageContent(CommandContext ctx)
             {
-                MessageBuilder.Content = String.Join('\n' , Election.RoleSetups.Where(x => x.IsTakingPart == true).Select(x => $"<@&{x.Roles?.RoleDiscordID}>"));
-            } 
+                MessageBuilder.Content = String.Join('\n', Election.RoleSetups.Where(x => x.IsTakingPart == true).Select(x => $"<@&{x.Roles?.RoleDiscordID}>"));
+            }
 
             public async void ShowViewMessage(CommandContext ctx)
             {
@@ -374,11 +383,11 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                     else
                         errorResponceStr += "Некорректная дата\n";
 
-                if (values["image"] != string.Empty)
-                    this.MainPictureURL = values["image"];
+                //if (values["image"] != string.Empty)
+                this.MainPictureURL = values["image"];
 
-                if (values["thumb"] != string.Empty)
-                    this.ThumbnailPictureURL = values["image"];
+                //if (values["thumb"] != string.Empty)
+                this.ThumbnailPictureURL = values["thumb"];
 
                 if (errorResponceStr == string.Empty)
                     txtResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
@@ -492,7 +501,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                         Election.RoleSetups = new List<RoleSetup>();
 
-                        foreach(var include_Str in includedValues)
+                        foreach (var include_Str in includedValues)
                         {
                             Election.RoleSetups.Add(
                                 new RoleSetup()
@@ -506,7 +515,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                 });
                         }
 
-                        foreach(var excluded_Str in excludedValues)
+                        foreach (var excluded_Str in excludedValues)
                         {
                             Election.RoleSetups.Add(
                                 new RoleSetup()
@@ -562,7 +571,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                     EditViewMessage();
 
-                    if(BitMaskElection.HasFlag(BitMaskElection.NotificationForAgree) || BitMaskElection.HasFlag(BitMaskElection.NotificationForNotVoted))
+                    if (BitMaskElection.HasFlag(BitMaskElection.NotificationForAgree) || BitMaskElection.HasFlag(BitMaskElection.NotificationForNotVoted))
                     {
                         ElectionListMessage = null;
 
@@ -572,6 +581,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                         BitMaskElection |= (BitMaskElection)(timeResponce.Result.Values.Select(x => Convert.ToInt64(x))
                                                                                        .Sum());
+
+                        BitMaskElection |= BitMaskElection.NotificationBefore_15Minutes;
                     }
                 }
 
@@ -607,8 +618,8 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                     var options = new DiscordSelectComponentOption[]
                     {
-                        new DiscordSelectComponentOption("Уведомлять за 15 минут до события", ((ulong)BitMaskElection.NotificationBefore_15Minutes).ToString(),
-                                                         isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_15Minutes) ? true : false),
+                        //new DiscordSelectComponentOption("Уведомлять за 15 минут до события", ((ulong)BitMaskElection.NotificationBefore_15Minutes).ToString(),
+                        //                                 isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_15Minutes) ? true : false),
                         new DiscordSelectComponentOption("Уведомлять за час до события", ((ulong)BitMaskElection.NotificationBefore_1Hour).ToString(),
                                                          isDefault: oldBitMask.HasFlag(BitMaskElection.NotificationBefore_1Hour) ? true : false),
                         new DiscordSelectComponentOption("Уведомлять за 2 часа до события", ((ulong)BitMaskElection.NotificationBefore_2Hour).ToString(),
@@ -816,9 +827,9 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
             menuMessage.DeleteAsync();
 
             if (isExit == true)
-                return new (null, null);
+                return new(null, null);
             else
-                return new (electionSettings.Election, electionSettings.MessageBuilder);
+                return new(electionSettings.Election, electionSettings.MessageBuilder);
         }
     }
 }

@@ -21,8 +21,6 @@ namespace WebApp
 
 #if DEBUG == false
             AspAppMain(args);
-#else
-            AspAppMain(args);
 #endif
             Console.ReadKey();
         }
@@ -68,7 +66,7 @@ namespace WebApp
             using (StatisticDbContext db = new StatisticDbContext())
             {
                 Console.WriteLine("Проверка соединения с БД");
-                Console.WriteLine(db.ServerGroups.SingleAsync().Result.ServerGroupName);
+                Console.WriteLine(db.ServerGroups.FirstOrDefaultAsync().Result.ServerGroupName);
 
                 db.DisposeAsync();
             }

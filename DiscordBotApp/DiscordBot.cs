@@ -2,6 +2,9 @@
 using DiscordBotApp.Modules;
 using DiscordBotApp.Modules.DiscordElectionNotificateClasses;
 using DiscordBotApp.Modules.ElectionModuleClasses;
+using DiscordBotApp.Modules.GameOnlineStatModule;
+using DiscordBotApp.Modules.PersonalStatisticModule;
+using DiscordBotApp.Modules.TrackingMessageModule;
 using DSharpPlus;
 using DSharpPlus.AsyncEvents;
 using DSharpPlus.CommandsNext;
@@ -44,6 +47,10 @@ namespace DiscordApp
                 commands.RegisterCommands<ElectionModule>();
                 commands.RegisterCommands<StatisticModule>();
                 commands.RegisterCommands<NotificationCycleModule>();
+                commands.RegisterCommands<TestModule>();
+                commands.RegisterCommands<GameOnlineStatModule>();
+                commands.RegisterCommands<MembersTrackerByRoleModule>();
+                commands.RegisterCommands<MessageTrackerModule>();
                 //commands.SetHelpFormatter<CustomHelpFormatter>();
 
                 discord.ComponentInteractionCreated += RegistrateInteractionEvent(services);

@@ -9,6 +9,7 @@ namespace DbLibrary.JagerDsModel
         public DbSet<RoleSetup> RoleSetups { get; set; }
         public DbSet<Vote> Votes { get; set; }
         public DbSet<TextForBadGuy> TextsForBadGuy { get; set; }
+        public DbSet<BadGuy> BadGuys { get; set; }
 
         public JagerDbContext()
         {

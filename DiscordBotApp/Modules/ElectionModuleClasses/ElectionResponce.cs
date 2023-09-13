@@ -2,6 +2,7 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 
@@ -92,7 +93,73 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                         break;
                     case "EL_UPDATE":
                         break;
-                    case "EL_DELETE":
+                    case "EL_DAYOFF":
+
+                        try
+                        {
+                            componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.Modal, _GetBuilder());
+
+                            var input = DiscordApp.DiscordBot.Client.GetInteractivity();
+
+                            var txtResponce = await input.WaitForModalAsync("el_responce4", TimeSpan.FromMinutes(5));
+
+                            if (txtResponce.TimedOut)
+                                return;
+
+                            var values = txtResponce.Result.Values;
+                            var txt = values["text"];
+
+                            txtResponce.Result.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+
+                            var chanel = componentInteraction.Guild.GetChannel(1143478141071929364);
+
+                            await chanel.SendMessageAsync(_GetDayOffBuilderMessage());
+
+                            var vote = dbContext.Votes.FirstOrDefaultAsync(x => x.ElectionID == election.ID && x.MemberID == componentInteraction.User.Id && x.VoteValue != false);
+
+                            if (vote != null)
+                                goto case "EL_DENY";
+
+                            DiscordMessageBuilder _GetDayOffBuilderMessage()
+                            {
+                                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+
+                                DiscordEmbedBuilder discordEmbed = new DiscordEmbedBuilder();
+
+                                discordEmbed.Title = "Отгул";
+
+                                discordEmbed.WithDescription(string.Empty);
+
+                                discordEmbed.Description += componentInteraction.User.Mention + "\n";
+                                discordEmbed.Description += "На событие: " + componentInteraction.Channel.Mention + "\n";
+                                discordEmbed.Description += "По причние:\n";
+                                discordEmbed.Description += txt;
+
+                                messageBuilder.AddEmbed(discordEmbed);
+
+                                return messageBuilder;
+                            }
+
+                            DiscordInteractionResponseBuilder _GetBuilder()
+                            {
+                                DiscordInteractionResponseBuilder responseBuilder = new DiscordInteractionResponseBuilder();
+
+                                responseBuilder.WithTitle("Оформить отгул");
+                                responseBuilder.WithCustomId("el_responce4");
+
+                                responseBuilder.AddComponents(new TextInputComponent("Причина для отгула", "text", value: string.Empty));
+
+                                return responseBuilder;
+                            }
+                        }
+                        catch (Exception ex) 
+                        {
+                            Console.WriteLine(ex.Message);
+                            Console.WriteLine(ex.ToString());
+                        }
+
+                        
+
                         break;
                 }
 
@@ -101,7 +168,23 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder(messageBuilder.Embed);
 
-                byte fieldIndex = 0;
+                //PROBLEM FIXER
+                embedBuilder.ClearFields();
+                embedBuilder.AddField("<:emoji_134:941666424324239430> ", "ㅤ", true);
+                embedBuilder.AddField("<:1_:941666407513473054> ", "ㅤ", true);
+                embedBuilder.AddField("<a:load:1112311359548444713>  ", "ㅤ", true);
+
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+                embedBuilder.AddField("ㅤ", "ㅤ", true);
+
+                byte columnIndex = 0;
+                const byte maxRows = 3;
+                const byte mentionsInField = 40;
 
                 var fullMembers = componentInteraction.Guild.Members.ToArray();
 
@@ -111,11 +194,7 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
                                     (Array.Exists<ulong>(rolesId, r => includedRolesID.Contains(r)) == true) 
                                      && 
                                     (Array.Exists<ulong>(rolesId, r => excludedRolesID.Contains(r)) == false)
-                               select new { m.Value.Id, m.Value.DisplayName }).ToList();
-
-                //IT'S REMOVED ITALICS FONT
-                for (int i = 0; i < members.Count; i++)
-                    members[i].DisplayName.Replace("_", "\\_");
+                               select new { m.Value.Id, m.Value.Mention }).ToList();
 
                 var votes = (from v in election.Votes
                              orderby v.VoteDateTime
@@ -123,58 +202,77 @@ namespace DiscordBotApp.Modules.ElectionModuleClasses
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.AgreeList))
                 {
-                    embedBuilder.Fields[fieldIndex].Value = string.Empty;
+                    //embedBuilder.Fields[columnIndex + (rowIndex * 3)].Value = string.Empty;
 
                     var yesList = (from v in votes
                                    let vL = v.Last()
                                    where vL.VoteValue == true
                                    orderby vL.VoteDateTime
                                    join m in members on vL.MemberID equals m.Id
-                                   select new { m.Id, m.DisplayName }).ToArray();
+                                   select new { m.Id, m.Mention }).ToArray();
 
                     foreach (var v in yesList)
                         members.RemoveAll(m => m.Id == v.Id);
 
 
-                    embedBuilder.Fields[fieldIndex].Name = "<:emoji_134:941666424324239430> " + yesList.Length;
-                    embedBuilder.Fields[fieldIndex].Value = string.Join('\n', yesList.Select(n => n.DisplayName).AsEnumerable());
-                    fieldIndex++;
+                    embedBuilder.Fields[columnIndex].Name = "<:emoji_134:941666424324239430> " + yesList.Length;
+
+                    for(int i = 0; i < maxRows; i++)
+                    {
+                        embedBuilder.Fields[columnIndex + (i * 3)].Value = string.Join("\n", yesList.Skip(i * mentionsInField)
+                                                                                                    .Take(mentionsInField)
+                                                                                                    .Select(x => x.Mention));
+                    }
+
+                    columnIndex++;
                 }
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.RejectList))
                 {
-                    embedBuilder.Fields[fieldIndex].Value = string.Empty;
+                    //embedBuilder.Fields[columnIndex + (rowIndex * 3)].Value = string.Empty;
 
                     var noList = (from v in votes
                                   let vL = v.Last()
                                   where vL.VoteValue == false
                                   orderby vL.VoteDateTime
                                   join m in members on vL.MemberID equals m.Id
-                                  select new { m.Id, m.DisplayName }).ToArray();
+                                  select new { m.Id, m.Mention }).ToArray();
 
                     foreach (var v in noList)
                         members.RemoveAll(m => m.Id == v.Id);
 
-                    embedBuilder.Fields[fieldIndex].Name = "<:1_:941666407513473054> " + noList.Length;
-                    embedBuilder.Fields[fieldIndex].Value = string.Join('\n', noList.Select(n => n.DisplayName).AsEnumerable());
-                    fieldIndex++;
+                    embedBuilder.Fields[columnIndex].Name = "<:1_:941666407513473054> " + noList.Length;
+
+                    for(int i = 0; i < maxRows; i++)
+                    {
+                        embedBuilder.Fields[columnIndex + (i * 3)].Value = string.Join("\n", noList.Skip(i * mentionsInField)
+                                                                                                   .Take(mentionsInField)
+                                                                                                   .Select(x => x.Mention));
+                    }
+
+                    columnIndex++;
                 }
 
                 if (election.BitMaskSettings.HasFlag(BitMaskElection.NotVotedList))
                 {
-                    embedBuilder.Fields[fieldIndex].Name = "<a:load:1112311359548444713> " + members.Count;
-                    embedBuilder.Fields[fieldIndex].Value = string.Join('\n', members.Select(n => n.DisplayName).AsEnumerable());
+                    embedBuilder.Fields[columnIndex].Name = "<a:load:1112311359548444713> " + members.Count;
+
+                    for(int i = 0; i < maxRows; i++)
+                    {
+                        embedBuilder.Fields[columnIndex + (i * 3)].Value = string.Join("\n", members.Skip(i * mentionsInField)
+                                                                                                    .Take(mentionsInField)
+                                                                                                    .Select(x => x.Mention));
+                    }
                 }
 
                 messageBuilder.Embed = embedBuilder;
-                componentInteraction.Message.ModifyAsync(messageBuilder);
 
                 await componentInteraction.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
 
+                componentInteraction.Message.ModifyAsync(messageBuilder);
+
                 dbContext.DisposeAsync();
                 GC.Collect();
-
-
             }
         }
     }

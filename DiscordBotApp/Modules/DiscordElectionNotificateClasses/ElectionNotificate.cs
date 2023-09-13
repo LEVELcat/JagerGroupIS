@@ -237,12 +237,15 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
 
                     var notVotedMember = members.Where(m => IDsOfVoted.Contains(m.Id) == false);
 
+                    List<ulong> notVotedID = new List<ulong>();
+
                     foreach (var member in notVotedMember)
                     {
                         try
                         {
                             if (eventIsNow)
                             {
+                                notVotedID.Add(member.Id);
                                 var banCheck = member.SendMessageAsync(notificationForNotVoted(true)).Result;
                             }
                             else
@@ -252,8 +255,23 @@ namespace DiscordBotApp.Modules.DiscordElectionNotificateClasses
                         }
                         catch (Exception ex)
                         {
-                            banList.Add(member);
+                            //banList.Add(member);
                         }
+                    }
+
+                    using(JagerDbContext badGuyContext  = new JagerDbContext())
+                    {
+                        foreach(var id in notVotedID)
+                        {
+                            badGuyContext.BadGuys.Add(
+                                new BadGuy()
+                                {
+                                    ElectionID = election.ID,
+                                    DiscordMemberID = id
+                                });
+                        }
+
+                        badGuyContext.DisposeAsync();
                     }
                 }
 
